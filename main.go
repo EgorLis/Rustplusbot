@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
+	"example.com/volhook/pkg/bmapi"
 	"example.com/volhook/pkg/mediahook"
 	"example.com/volhook/pkg/rpclient"
 )
@@ -21,22 +23,34 @@ type RustPlusConfig struct {
 
 func main() {
 	// Пример чтения из файла config.json
-	data, err := os.ReadFile("conf/config.json")
+	data, err := os.ReadFile("conf/rpconfig.json")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var cfg RustPlusConfig
-	if err := json.Unmarshal(data, &cfg); err != nil {
+	var rpcfg RustPlusConfig
+	if err := json.Unmarshal(data, &rpcfg); err != nil {
 		log.Fatal(err)
 	}
+
+	// Пример чтения из файла config.json
+	data, err = os.ReadFile("conf/bmconfig.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var bmcfg bmapi.BMConf
+	if err := json.Unmarshal(data, &bmcfg); err != nil {
+		log.Fatal(err)
+	}
+
 	// ID твоей smart‑сигналки (можно несколько)
 	alarmIDs := map[uint32]string{
 		433470: "Main Alarm",
 	}
 
 	ctx := context.Background()
-	rpc := rpclient.New(cfg.Server, cfg.Port, cfg.PlayerID, cfg.PlayerToken, cfg.UseProxy)
+	rpc := rpclient.New(rpcfg.Server, rpcfg.Port, rpcfg.PlayerID, rpcfg.PlayerToken, rpcfg.UseProxy)
 
 	// события (необязательно)
 	rpc.OnConnecting = func() { fmt.Println("connecting...") }
@@ -97,6 +111,17 @@ func main() {
 			return true
 		})
 	}
+
+	notifyScan := func(text string) {
+		_ = rpc.SendTeamMessage(text, nil)
+		log.Println(text)
+	}
+
+	bm := bmapi.NewClientFromConf(bmcfg)
+
+	bm.StartScan(1*time.Minute, notifyScan)
+
+	defer bm.Stop()
 
 	h, err := mediahook.New(
 		func() {
