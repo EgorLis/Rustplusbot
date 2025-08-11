@@ -323,6 +323,11 @@ func (rp *RustPlus) SendCameraInput(buttons int32, dx, dy float32, cb func(*AppM
 	}, cb)
 }
 
+func (rp *RustPlus) BotSay(msg string) error {
+	err := rp.SendTeamMessage("[bot] "+msg, nil)
+	return err
+}
+
 // ========================= удобный враппер Camera =========================
 
 type Camera struct {

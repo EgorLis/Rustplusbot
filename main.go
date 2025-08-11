@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"example.com/volhook/pkg/bmapi"
@@ -44,6 +45,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	bm := bmapi.NewClientFromConf(bmcfg)
+
 	// ID твоей smart‑сигналки (можно несколько)
 	alarmIDs := map[uint32]string{
 		433470: "Main Alarm",
@@ -61,6 +64,29 @@ func main() {
 		b := msg.GetBroadcast()
 		if b == nil {
 			return
+		}
+
+		// --- 1. Обработка сообщений чата ---
+		if chat := b.GetTeamMessage(); chat != nil {
+			text := strings.TrimSpace(*chat.Message.Message)
+
+			// Игнорируем свои сообщения
+			if strings.HasPrefix(text, "[bot]") {
+				return
+			}
+
+			// Команды
+			switch strings.ToLower(text) {
+			case "!online":
+				onlineInfo := bm.IsOnline()
+				rpc.BotSay(bm.FormatOnlineInfo(onlineInfo))
+
+			case "!bt1":
+				rpc.BotSay(fmt.Sprintf("Кнопка 1: %s", getButtonState(1)))
+
+			case "!bt2":
+				rpc.BotSay(fmt.Sprintf("Кнопка 2: %s", getButtonState(2)))
+			}
 		}
 
 		ec := b.GetEntityChanged()
@@ -117,8 +143,6 @@ func main() {
 		log.Println(text)
 	}
 
-	bm := bmapi.NewClientFromConf(bmcfg)
-
 	bm.StartScan(1*time.Minute, notifyScan)
 
 	defer bm.Stop()
@@ -149,3 +173,8 @@ func main() {
 }
 
 func beep() { fmt.Print("\a") } // тут можешь вставить проигрывание WAV/MP3
+
+func getButtonState(btnID int) string {
+	// TODO: тут твоя логика запроса состояния кнопки
+	return "не инициализирована"
+}

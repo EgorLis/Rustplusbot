@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -186,17 +187,30 @@ func (c *Client) Stop() {
 }
 
 // IsOnline возвращает текущее состояние для всех отслеживаемых игроков.
-// true — игрок на сервере, false — оффлайн.
+// string:name, true — игрок на сервере, false — оффлайн.
 func (c *Client) IsOnline() map[string]bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
 	status := make(map[string]bool, len(c.playersToDetect))
-	for id := range c.playersToDetect {
+	for id, name := range c.playersToDetect {
 		_, online := c.lastPlayersScan[id]
-		status[id] = online
+		status[name] = online
 	}
 	return status
+}
+
+func (c *Client) FormatOnlineInfo(players map[string]bool) string {
+	var online, offline []string
+	for name, isOnline := range players {
+		if isOnline {
+			online = append(online, name)
+		} else {
+			offline = append(offline, name)
+		}
+	}
+	return fmt.Sprintf("Онлайн: %s | Оффлайн: %s",
+		strings.Join(online, ", "), strings.Join(offline, ", "))
 }
 
 // fetchPlayers — получает текущих игроков, фильтруя только отслеживаемых.
