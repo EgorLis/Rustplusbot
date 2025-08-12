@@ -39,9 +39,10 @@ func main() {
 	bot.SetBattleMetrics(bmcfg)
 	bot.SetMediaHook()
 
-	bot.SetAlarm(566495, "boomAlarm", "дом рейдят", beep)
-	bot.SetSwitch(1, 559662, "PVO")
-	bot.SetSwitch(2, 559665, "TURRETS")
+	// подключим конфиг бота и применим его (alarms/switches/players)
+	if err := bot.UseConfig("conf/botconfig.json"); err != nil {
+		log.Fatal(err)
+	}
 
 	if err := bot.Start(); err != nil {
 		log.Fatal(err)
@@ -52,5 +53,3 @@ func main() {
 	// держим процесс живым
 	select {}
 }
-
-func beep() { fmt.Println("TRIGGER") } // тут можешь вставить проигрывание WAV/MP3

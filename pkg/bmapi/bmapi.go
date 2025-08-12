@@ -35,9 +35,8 @@ type BMResponse struct {
 }
 
 type BMConf struct {
-	Server  string   `json:"server"`
-	Token   string   `json:"token"`
-	Players []Player `json:"players"`
+	Server string `json:"server"`
+	Token  string `json:"token"`
 }
 
 type Player struct {
@@ -74,10 +73,8 @@ func NewClient(token, server string, players ...Player) *Client {
 }
 
 func NewClientFromConf(conf BMConf) *Client {
-	watch := make(map[string]string, len(conf.Players))
-	for _, p := range conf.Players {
-		watch[p.ID] = p.Name
-	}
+	watch := make(map[string]string)
+
 	return &Client{
 		http:            &http.Client{Timeout: 10 * time.Second},
 		token:           conf.Token,
@@ -93,6 +90,12 @@ func (c *Client) AddPlayer(players ...Player) {
 	for _, p := range players {
 		c.playersToDetect[p.ID] = p.Name
 	}
+}
+
+func (c *Client) RemovePlayer(playerId string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	delete(c.playersToDetect, playerId)
 }
 
 func (c *Client) Players() map[string]string {
@@ -262,6 +265,11 @@ func (c *Client) fetchPlayers() (map[string]string, error) {
 
 	// id->name текущие игроки сервера
 	names := map[string]string{}
+
+	if len(br.Included) == 0 {
+		log.Println("[online]-> сервер пустой")
+	}
+
 	for _, inc := range br.Included {
 		if inc.Type == "player" {
 			names[inc.ID] = inc.Attributes.Name
