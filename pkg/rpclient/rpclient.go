@@ -13,6 +13,14 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+type RustPlusConfig struct {
+	Server      string `json:"server"`
+	Port        int    `json:"port"`
+	PlayerID    uint64 `json:"player_id"`
+	PlayerToken int32  `json:"player_token"`
+	UseProxy    bool   `json:"use_proxy"`
+}
+
 type RustPlus struct {
 	server      string
 	port        int
