@@ -26,6 +26,10 @@ type RustPlusBot struct {
 	stopCh chan struct{}
 	wg     sync.WaitGroup
 	mu     sync.Mutex
+
+	// чтобы не дёргать re-init слишком часто при серии быстрых реконнектов
+	reinitMu   sync.Mutex
+	lastReinit time.Time
 }
 
 type smartAlarm struct {
@@ -51,7 +55,13 @@ func (bot *RustPlusBot) SetRustPlusClient(cfg rpclient.RustPlusConfig) {
 	bot.rpc = rpclient.New(cfg.Server, cfg.Port, cfg.PlayerID, cfg.PlayerToken, cfg.UseProxy)
 
 	bot.rpc.OnConnecting = func() { fmt.Println("connecting...") }
-	bot.rpc.OnConnected = func() { fmt.Println("connected") }
+
+	// КЛЮЧЕВОЕ: любое успешное подключение (первое или реконнект) — делаем re-init
+	bot.rpc.OnConnected = func() {
+		fmt.Println("connected")
+		go bot.reinitDevices()
+	}
+
 	bot.rpc.OnError = func(err error) { fmt.Println("err:", err) }
 
 	bot.rpc.OnMessage = func(msg *rpclient.AppMessage) {
@@ -65,11 +75,9 @@ func (bot *RustPlusBot) SetRustPlusClient(cfg rpclient.RustPlusConfig) {
 			tm := chat.GetMessage()
 			text := strings.TrimSpace(tm.GetMessage())
 
-			// игнорируем сообщения бота
 			if strings.HasPrefix(text, "[bot]") {
 				return
 			}
-
 			switch strings.ToLower(text) {
 			case "!online":
 				if bot.bm == nil {
@@ -106,14 +114,12 @@ func (bot *RustPlusBot) SetRustPlusClient(cfg rpclient.RustPlusConfig) {
 			if !watched {
 				return
 			}
-			if p := ec.GetPayload(); p != nil && p.Value != nil {
-				if p.GetValue() {
-					text := fmt.Sprintf("[ALARM TRIGGERED] %s (%d): %s", alarm.name, id, alarm.msg)
-					log.Println(text)
-					bot.rpc.BotSay(text)
-					if alarm.callback != nil {
-						go alarm.callback() // не блокируем обработчик
-					}
+			if p := ec.GetPayload(); p != nil && p.Value != nil && p.GetValue() {
+				text := fmt.Sprintf("[ALARM TRIGGERED] %s (%d): %s", alarm.name, id, alarm.msg)
+				log.Println(text)
+				bot.rpc.BotSay(text)
+				if alarm.callback != nil {
+					go alarm.callback()
 				}
 			}
 		}
@@ -178,80 +184,38 @@ func (bot *RustPlusBot) Start() error {
 	bot.stopCh = make(chan struct{})
 
 	ctx, cancel := context.WithCancel(context.Background())
-
-	// подключаем WS
 	if err := bot.rpc.Connect(ctx); err != nil {
 		cancel()
 		return err
 	}
 
-	// BM scan
 	if bot.bm != nil {
 		notify := func(text string) {
 			_ = bot.rpc.SendTeamMessage(text, nil)
 			log.Println(text)
 		}
-		if err := bot.bm.StartScan(1*time.Minute, notify); err != nil {
-			log.Println("bm scan:", err)
-		}
+		_ = bot.bm.StartScan(1*time.Minute, notify)
 	}
 
-	// mediahook
 	if bot.mediaHook != nil {
 		if err := bot.mediaHook.Start(); err != nil {
 			log.Println("mediahook:", err)
 		}
 	}
 
-	// начальная синхронизация состояния свитчей (читаем value, не переключаем!)
-	initSwitch := func(sw *smartSwitch) {
-		if sw == nil {
-			return
-		}
-		id := sw.id
-		_ = bot.rpc.GetEntityInfo(id, func(m *rpclient.AppMessage) bool {
-			if info := m.GetResponse().GetEntityInfo(); info != nil {
-				val := false
-				if p := info.GetPayload(); p != nil && p.Value != nil {
-					val = p.GetValue()
-				}
-				bot.mu.Lock()
-				sw.state = val
-				bot.mu.Unlock()
-				log.Printf("Init %s (%d): value=%v\n", sw.name, id, val)
-			}
-			return true
-		})
-	}
-	initSwitch(bot.bt1switch)
-	initSwitch(bot.bt2switch)
-
-	// init alarms (лог)
-	for id, alarm := range bot.alarms {
-		_ = bot.rpc.GetEntityInfo(id, func(m *rpclient.AppMessage) bool {
-			info := m.GetResponse().GetEntityInfo()
-			if info != nil {
-				log.Printf("Init %s (%d): type=%v, value=%v\n",
-					alarm.name, id, info.GetType(), info.GetPayload().GetValue())
-			}
-			return true
-		})
-	}
-
-	// фоновой «сторож»: ждём стоп и прибираем ресурсы
+	// сторож для остановки
 	bot.wg.Add(1)
 	go func() {
 		defer bot.wg.Done()
 		<-bot.stopCh
-		// порядок остановки
 		if bot.mediaHook != nil {
 			bot.mediaHook.Close()
 		}
 		if bot.bm != nil {
 			bot.bm.Stop()
 		}
-		cancel()             // прервать readLoop
-		bot.rpc.Disconnect() // закрыть сокет
+		cancel()
+		bot.rpc.Disconnect()
 	}()
 
 	return nil
@@ -294,4 +258,56 @@ func (bot *RustPlusBot) turnSwitch(number int) string {
 	_ = bot.rpc.TurnSmartSwitchOn(sw.id, nil)
 	sw.state = true
 	return fmt.Sprintf("%s : on", sw.name)
+}
+
+// re-init всех девайсов при (ре)подключении
+func (bot *RustPlusBot) reinitDevices() {
+	// антидребезг: если OnConnected прилетело несколько раз подряд — коллапсируем в 1 вызов
+	bot.reinitMu.Lock()
+	if time.Since(bot.lastReinit) < 2*time.Second {
+		bot.reinitMu.Unlock()
+		return
+	}
+	bot.lastReinit = time.Now()
+	bot.reinitMu.Unlock()
+
+	// синхронизируем свитчи: читаем текущее значение и обновляем state (НЕ переключаем)
+	bot.initSwitch(bot.bt1switch)
+	bot.initSwitch(bot.bt2switch)
+
+	// просто лог/проверка для алармов
+	for id, alarm := range bot.alarms {
+		_ = bot.rpc.GetEntityInfo(id, func(m *rpclient.AppMessage) bool {
+			info := m.GetResponse().GetEntityInfo()
+			if info != nil {
+				var val any = nil
+				if p := info.GetPayload(); p != nil && p.Value != nil {
+					val = p.GetValue()
+				}
+				log.Printf("Init %s (%d): type=%v, value=%v\n",
+					alarm.name, id, info.GetType(), val)
+			}
+			return true
+		})
+	}
+}
+
+func (bot *RustPlusBot) initSwitch(sw *smartSwitch) {
+	if sw == nil {
+		return
+	}
+	id := sw.id
+	_ = bot.rpc.GetEntityInfo(id, func(m *rpclient.AppMessage) bool {
+		if info := m.GetResponse().GetEntityInfo(); info != nil {
+			val := false
+			if p := info.GetPayload(); p != nil && p.Value != nil {
+				val = p.GetValue()
+			}
+			bot.mu.Lock()
+			sw.state = val
+			bot.mu.Unlock()
+			log.Printf("Switch init %s (%d): value=%v\n", sw.name, id, val)
+		}
+		return true
+	})
 }

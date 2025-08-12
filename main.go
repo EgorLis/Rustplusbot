@@ -39,7 +39,7 @@ func main() {
 	bot.SetBattleMetrics(bmcfg)
 	bot.SetMediaHook()
 
-	bot.SetAlarm(559684, "boomAlarm", "дом рейдят", beep)
+	bot.SetAlarm(566495, "boomAlarm", "дом рейдят", beep)
 	bot.SetSwitch(1, 559662, "PVO")
 	bot.SetSwitch(2, 559665, "TURRETS")
 
