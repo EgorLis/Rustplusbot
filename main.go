@@ -34,10 +34,14 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// воспроизведение звука при смерти персонажа
+	sound := "3.mp3"
+
 	bot := rpbot.New()
 	bot.SetRustPlusClient(rpcfg)
 	bot.SetBattleMetrics(bmcfg)
 	bot.SetMediaHook()
+	bot.SetCheckPlayerDeath(rpcfg.PlayerID, &sound)
 
 	// подключим конфиг бота и применим его (alarms/switches/players)
 	if err := bot.UseConfig("conf/botconfig.json"); err != nil {

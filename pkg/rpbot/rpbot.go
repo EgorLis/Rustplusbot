@@ -52,6 +52,16 @@ type configStore struct {
 	data BotConfig
 }
 
+type playerDeath struct {
+	steamID       uint64
+	muState       sync.Mutex
+	lastOnline    *bool
+	lastAlive     *bool
+	lastDeathTime uint32
+	lastLogoutAt  time.Time
+	callback      func()
+}
+
 func newConfigStore(path string) *configStore {
 	return &configStore{
 		path: path,
@@ -93,6 +103,8 @@ type RustPlusBot struct {
 	bt1switch *smartSwitch
 	bt2switch *smartSwitch
 
+	checkPlayerDeath *playerDeath
+
 	cfg *configStore
 
 	stopCh chan struct{}
@@ -102,6 +114,12 @@ type RustPlusBot struct {
 	// чтобы не дёргать re-init слишком часто при серии быстрых реконнектов
 	reinitMu   sync.Mutex
 	lastReinit time.Time
+
+	// death-watch
+	dwMu      sync.Mutex
+	dwRunning bool
+	dwCancel  context.CancelFunc
+	dwEvery   time.Duration
 }
 
 type smartAlarm struct {
@@ -120,6 +138,14 @@ type smartSwitch struct {
 func New() *RustPlusBot {
 	return &RustPlusBot{
 		alarms: make(map[uint32]smartAlarm),
+	}
+}
+
+func (bot *RustPlusBot) SetCheckPlayerDeath(steamID uint64, sound *string) {
+	death := playerDeath{steamID: steamID}
+	bot.checkPlayerDeath = &death
+	if sound != nil {
+		bot.checkPlayerDeath.callback = bot.callbackForSound(*sound)
 	}
 }
 
@@ -173,10 +199,13 @@ func (bot *RustPlusBot) SetRustPlusClient(cfg rpclient.RustPlusConfig) {
 
 		// --- чат-команды ---
 		if chat := b.GetTeamMessage(); chat != nil {
-			text := strings.TrimSpace(chat.GetMessage().GetMessage())
+			message := chat.GetMessage()
+			text := strings.TrimSpace(message.GetMessage())
 			if strings.HasPrefix(text, "[bot]") {
 				return
 			}
+			playerName := message.GetName()
+			log.Printf("[%s] %s", playerName, text)
 			if strings.HasPrefix(text, "!") {
 				if err := bot.HandleCommand(text); err != nil {
 					bot.rpc.BotSay(fmt.Sprintf("err: %v", err))
@@ -194,7 +223,6 @@ func (bot *RustPlusBot) SetRustPlusClient(cfg rpclient.RustPlusConfig) {
 			}
 			if p := ec.GetPayload(); p != nil && p.Value != nil && p.GetValue() {
 				text := fmt.Sprintf("[ALARM TRIGGERED] %s (%d): %s", alarm.name, id, alarm.msg)
-				log.Println(text)
 				bot.rpc.BotSay(text)
 				if alarm.callback != nil {
 					go alarm.callback()
@@ -229,25 +257,22 @@ func (bot *RustPlusBot) SetBattleMetrics(cfg bmapi.BMConf) {
 }
 
 func (bot *RustPlusBot) SetSwitch(number int, switchId uint32, switchName string) error {
-	if number > 2 || number <= 0 {
-		return errors.New("такую кнокпу нельзя установить")
+	if number < 1 || number > 2 {
+		return errors.New("такую кнопку нельзя установить")
 	}
-
-	sw := smartSwitch{id: switchId, name: switchName, state: false}
+	sw := &smartSwitch{id: switchId, name: switchName, state: false}
 
 	if number == 1 {
-		bot.bt1switch = &sw
+		bot.bt1switch = sw
 	} else {
-		bot.bt2switch = &sw
+		bot.bt2switch = sw
 	}
-
 	return nil
 }
 
-func (bot *RustPlusBot) SetAlarm(alarmId uint32, alarmName string, alarmMsg string, triggerFunc func()) {
-	sa := smartAlarm{name: alarmName, msg: alarmMsg, callback: triggerFunc}
-	bot.alarms[alarmId] = sa
-	bot.initAlarm(&sa, alarmId)
+func (bot *RustPlusBot) SetAlarm(alarmId uint32, alarmName, alarmMsg string, triggerFunc func()) {
+	bot.alarms[alarmId] = smartAlarm{name: alarmName, msg: alarmMsg, callback: triggerFunc}
+	bot.initAlarmByID(alarmId)
 }
 
 func (bot *RustPlusBot) Start() error {
@@ -271,7 +296,6 @@ func (bot *RustPlusBot) Start() error {
 	if bot.bm != nil {
 		notify := func(text string) {
 			_ = bot.rpc.BotSay(text)
-			log.Println(text)
 		}
 		_ = bot.bm.StartScan(1*time.Minute, notify)
 	}
@@ -328,6 +352,41 @@ func PlaySoundFile(path string) error {
 	return cmd.Start()
 }
 
+func (bot *RustPlusBot) StartDeathWatch(every time.Duration) error {
+	bot.dwMu.Lock()
+	defer bot.dwMu.Unlock()
+
+	if bot.checkPlayerDeath == nil {
+		return fmt.Errorf("death-watch: steamID не задан (вызови SetCheckPlayerDeath)")
+	}
+	if bot.dwRunning {
+		// можно обновить интервал на лету
+		bot.dwEvery = every
+		return nil
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	bot.dwCancel = cancel
+	bot.dwEvery = every
+	bot.dwRunning = true
+
+	go bot.deathPollLoop(ctx) // фоновая горутина
+	return nil
+}
+
+func (bot *RustPlusBot) StopDeathWatch() {
+	bot.dwMu.Lock()
+	defer bot.dwMu.Unlock()
+	if !bot.dwRunning {
+		return
+	}
+	bot.dwRunning = false
+	if bot.dwCancel != nil {
+		bot.dwCancel()
+		bot.dwCancel = nil
+	}
+}
+
 func (bot *RustPlusBot) HandleCommand(text string) error {
 	fields := splitArgs(text)
 	if len(fields) == 0 {
@@ -353,6 +412,12 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 			"!track add <steamid> [name]",
 			"!track del <steamid>",
 			"!track list|info",
+		}, "\n"))
+		say(strings.Join([]string{
+			"!death set <steamid> [sound=1.mp3|none]",
+			"!death start [interval_sec]",
+			"!death stop",
+			"!death status",
 			"!save",
 		}, "\n"))
 		return nil
@@ -588,6 +653,66 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 		default:
 			return fmt.Errorf("usage: !track add|del|list|info")
 		}
+	case "!death":
+		if len(fields) < 2 {
+			return fmt.Errorf("usage: !death set|start|stop|status")
+		}
+		sub := strings.ToLower(fields[1])
+
+		switch sub {
+		case "set":
+			// !death set <steamid> [sound=1.mp3|none]
+			if len(fields) < 3 {
+				return fmt.Errorf("usage: !death set <steamid> [sound=1.mp3|none]")
+			}
+			steamID, err := strconv.ParseUint(fields[2], 10, 64)
+			if err != nil {
+				return fmt.Errorf("bad steamid: %w", err)
+			}
+			var sound *string
+			if len(fields) >= 4 {
+				kv := parseKV(fields[3:])
+				s := strings.TrimSpace(kv["sound"])
+				sound = &s // может быть "none" или имя файла
+			}
+			bot.SetCheckPlayerDeath(steamID, sound)
+			_ = bot.rpc.BotSay(fmt.Sprintf("death-watch target set: %d", steamID))
+			return nil
+
+		case "start":
+			// !death start [sec]
+			sec := 15
+			if len(fields) >= 3 {
+				if v, err := strconv.Atoi(fields[2]); err == nil && v > 0 {
+					sec = v
+				}
+			}
+			if err := bot.StartDeathWatch(time.Duration(sec) * time.Second); err != nil {
+				return err
+			}
+			_ = bot.rpc.BotSay(fmt.Sprintf("death-watch started (%ds)", sec))
+			return nil
+
+		case "stop":
+			bot.StopDeathWatch()
+			_ = bot.rpc.BotSay("death-watch stopped")
+			return nil
+
+		case "status":
+			bot.dwMu.Lock()
+			running := bot.dwRunning
+			ev := bot.dwEvery
+			bot.dwMu.Unlock()
+			if running {
+				_ = bot.rpc.BotSay(fmt.Sprintf("death-watch: running (every %s)", ev))
+			} else {
+				_ = bot.rpc.BotSay("death-watch: stopped")
+			}
+			return nil
+
+		default:
+			return fmt.Errorf("usage: !death set|start|stop|status")
+		}
 
 	// ---------- SAVE ----------
 	case "!save":
@@ -654,11 +779,17 @@ func (bot *RustPlusBot) turnSwitch(number int) string {
 	defer sw.Unlock()
 
 	if sw.state {
-		_ = bot.rpc.TurnSmartSwitchOff(sw.id, nil)
+		err := bot.rpc.TurnSmartSwitchOff(sw.id, nil)
+		if err != nil {
+			return fmt.Sprintf("%s: %s", sw.name, err)
+		}
 		sw.state = false
 		return fmt.Sprintf("%s : off", sw.name)
 	}
-	_ = bot.rpc.TurnSmartSwitchOn(sw.id, nil)
+	err := bot.rpc.TurnSmartSwitchOn(sw.id, nil)
+	if err != nil {
+		return fmt.Sprintf("%s: %s", sw.name, err)
+	}
 	sw.state = true
 	return fmt.Sprintf("%s : on", sw.name)
 }
@@ -679,8 +810,8 @@ func (bot *RustPlusBot) reinitDevices() {
 	bot.initSwitch(bot.bt2switch)
 
 	// просто лог/проверка для алармов
-	for id, alarm := range bot.alarms {
-		bot.initAlarm(&alarm, id)
+	for id := range bot.alarms {
+		bot.initAlarmByID(id)
 	}
 }
 
@@ -704,19 +835,21 @@ func (bot *RustPlusBot) initSwitch(sw *smartSwitch) {
 	})
 }
 
-func (bot *RustPlusBot) initAlarm(sa *smartAlarm, id uint32) {
-	if sa == nil {
-		return
-	}
+func (bot *RustPlusBot) initAlarmByID(id uint32) {
 	_ = bot.rpc.GetEntityInfo(id, func(m *rpclient.AppMessage) bool {
 		info := m.GetResponse().GetEntityInfo()
 		if info != nil {
+			// безопасно достаём имя по id на момент коллбека
+			a, ok := bot.alarms[id]
+			name := fmt.Sprintf("alarm_%d", id)
+			if ok {
+				name = a.name
+			}
 			var val any = nil
 			if p := info.GetPayload(); p != nil && p.Value != nil {
 				val = p.GetValue()
 			}
-			log.Printf("Init %s (%d): type=%v, value=%v\n",
-				sa.name, id, info.GetType(), val)
+			log.Printf("Init %s (%d): type=%v, value=%v\n", name, id, info.GetType(), val)
 		}
 		return true
 	})
@@ -733,6 +866,134 @@ func (bot *RustPlusBot) callbackForSound(sound string) func() {
 	return func() {
 		if err := PlaySoundFile(path); err != nil {
 			log.Println("sound open error:", err)
+		}
+	}
+}
+
+func (bot *RustPlusBot) checkDeath(ti *rpclient.AppTeamInfo, say func(string)) {
+
+	log.Println("[death] check death...")
+
+	pd := bot.checkPlayerDeath
+	if pd == nil {
+		return
+	}
+
+	// найти себя
+	var me *rpclient.AppTeamInfo_Member
+	for _, m := range ti.GetMembers() {
+		if m.GetSteamId() == pd.steamID {
+			me = m
+			break
+		}
+	}
+	if me == nil {
+		return
+	}
+
+	online := me.GetIsOnline()
+	alive := me.GetIsAlive()
+	dt := me.GetDeathTime()
+
+	pd.muState.Lock()
+	defer pd.muState.Unlock()
+
+	// первичная инициализация — просто зафиксировать стартовое состояние
+	if pd.lastOnline == nil {
+		v1, v2 := online, alive
+		pd.lastOnline, pd.lastAlive = &v1, &v2
+		pd.lastDeathTime = dt
+		if !online {
+			pd.lastLogoutAt = time.Now()
+		}
+		log.Printf("[death] init: online: %t, alive: %t, death time: %d", online, alive, dt)
+		return
+	}
+
+	log.Printf("[death] prev: online: %t, alive: %t, death time: %d", *pd.lastOnline, *pd.lastAlive, pd.lastDeathTime)
+	log.Printf("[death] cur: online: %t, alive: %t, death time: %d", online, alive, dt)
+
+	// отметим момент выхода (может пригодиться в другой логике)
+	if *pd.lastOnline && !online {
+		pd.lastLogoutAt = time.Now()
+	}
+
+	// детект смерти: либо вырос deathTime, либо упал флаг alive
+	death := false
+	if *pd.lastAlive && !alive {
+		death = true
+	}
+
+	if death {
+		say("Я умер 💀")
+		if pd.callback != nil {
+			go pd.callback()
+		}
+		// дальше просто обновим флаги и выйдем
+	}
+
+	// финальное обновление флагов (если смерти не было — тоже актуально)
+	*pd.lastAlive = alive
+	*pd.lastOnline = online
+	pd.lastDeathTime = dt
+}
+
+// deathPollLoop — живёт всё время, пока не вызовут StopDeathWatch().
+func (bot *RustPlusBot) deathPollLoop(ctx context.Context) {
+	// один тикер — ваш интервал опроса
+	t := time.NewTicker(bot.dwEvery)
+	defer t.Stop()
+
+	// чтобы не спамить в разрыв соединения
+	var notConnectedBackoff = time.Second
+	const maxBackoff = 10 * time.Second
+
+	// чтобы избежать ложного триггера на первом чтении
+	initOnce := true
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+
+		case <-t.C:
+			// 1) нет соединения? просто «спим» и ждём следующего тика,
+			//    можно добавить небольшой прогрессивный backoff чтобы не дёргать CPU
+			if !bot.rpc.IsConnected() {
+				time.Sleep(notConnectedBackoff)
+				if notConnectedBackoff < maxBackoff {
+					notConnectedBackoff *= 2
+					if notConnectedBackoff > maxBackoff {
+						notConnectedBackoff = maxBackoff
+					}
+				}
+				continue
+			}
+			// есть соединение — сбросим backoff
+			notConnectedBackoff = time.Second
+
+			// 2) безопасно дергаем TeamInfo с таймаутом; при реконнекте будет ошибка — не страшно
+			resp, err := bot.rpc.SendRequestAsync(&rpclient.AppRequest{
+				GetTeamInfo: &rpclient.AppEmpty{},
+			}, 8*time.Second)
+			if err != nil || resp == nil {
+				// сеть/таймаут — молча ждём следующий тик
+				continue
+			}
+			ti := resp.GetTeamInfo()
+			if ti == nil {
+				continue
+			}
+
+			// 3) первый проход — только зафиксировать состояние
+			if initOnce {
+				bot.checkDeath(ti, func(string) {})
+				initOnce = false
+				continue
+			}
+
+			// 4) обычная обработка: сравнить снапшоты и, если надо, сообщить
+			bot.checkDeath(ti, func(msg string) { _ = bot.rpc.BotSay(msg) })
 		}
 	}
 }

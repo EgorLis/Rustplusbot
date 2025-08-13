@@ -388,7 +388,12 @@ func (rp *RustPlus) SendCameraInput(buttons int32, dx, dy float32, cb func(*AppM
 }
 
 func (rp *RustPlus) BotSay(msg string) error {
-	err := rp.SendTeamMessage("[bot] "+msg, nil)
+	text := "[bot] " + msg
+	err := rp.SendTeamMessage(text, nil)
+	log.Println(text)
+	if err != nil {
+		log.Println(err)
+	}
 	return err
 }
 

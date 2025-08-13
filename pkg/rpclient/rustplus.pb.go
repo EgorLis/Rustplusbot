@@ -81,10 +81,164 @@ func (AppEntityType) EnumDescriptor() ([]byte, []int) {
 	return file_rustplus_proto_rawDescGZIP(), []int{0}
 }
 
+type IconType int32
+
+const (
+	IconType_Default IconType = 0
+	IconType_Money   IconType = 1
+	IconType_Home    IconType = 2
+	IconType_Drop    IconType = 3
+	IconType_Sight   IconType = 4
+	IconType_Shield  IconType = 5
+	IconType_Skull   IconType = 6
+	IconType_Bed     IconType = 7
+	IconType_Sleep   IconType = 8
+	IconType_Gun     IconType = 9
+	IconType_Rock    IconType = 10
+	IconType_Chest   IconType = 11
+)
+
+// Enum value maps for IconType.
+var (
+	IconType_name = map[int32]string{
+		0:  "Default",
+		1:  "Money",
+		2:  "Home",
+		3:  "Drop",
+		4:  "Sight",
+		5:  "Shield",
+		6:  "Skull",
+		7:  "Bed",
+		8:  "Sleep",
+		9:  "Gun",
+		10: "Rock",
+		11: "Chest",
+	}
+	IconType_value = map[string]int32{
+		"Default": 0,
+		"Money":   1,
+		"Home":    2,
+		"Drop":    3,
+		"Sight":   4,
+		"Shield":  5,
+		"Skull":   6,
+		"Bed":     7,
+		"Sleep":   8,
+		"Gun":     9,
+		"Rock":    10,
+		"Chest":   11,
+	}
+)
+
+func (x IconType) Enum() *IconType {
+	p := new(IconType)
+	*p = x
+	return p
+}
+
+func (x IconType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (IconType) Descriptor() protoreflect.EnumDescriptor {
+	return file_rustplus_proto_enumTypes[1].Descriptor()
+}
+
+func (IconType) Type() protoreflect.EnumType {
+	return &file_rustplus_proto_enumTypes[1]
+}
+
+func (x IconType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Do not use.
+func (x *IconType) UnmarshalJSON(b []byte) error {
+	num, err := protoimpl.X.UnmarshalJSONEnum(x.Descriptor(), b)
+	if err != nil {
+		return err
+	}
+	*x = IconType(num)
+	return nil
+}
+
+// Deprecated: Use IconType.Descriptor instead.
+func (IconType) EnumDescriptor() ([]byte, []int) {
+	return file_rustplus_proto_rawDescGZIP(), []int{1}
+}
+
+type IconColor int32
+
+const (
+	IconColor_Yellow IconColor = 0
+	IconColor_Blue   IconColor = 1
+	IconColor_Green  IconColor = 2
+	IconColor_Red    IconColor = 3
+	IconColor_Purple IconColor = 4
+	IconColor_Cyan   IconColor = 5
+)
+
+// Enum value maps for IconColor.
+var (
+	IconColor_name = map[int32]string{
+		0: "Yellow",
+		1: "Blue",
+		2: "Green",
+		3: "Red",
+		4: "Purple",
+		5: "Cyan",
+	}
+	IconColor_value = map[string]int32{
+		"Yellow": 0,
+		"Blue":   1,
+		"Green":  2,
+		"Red":    3,
+		"Purple": 4,
+		"Cyan":   5,
+	}
+)
+
+func (x IconColor) Enum() *IconColor {
+	p := new(IconColor)
+	*p = x
+	return p
+}
+
+func (x IconColor) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (IconColor) Descriptor() protoreflect.EnumDescriptor {
+	return file_rustplus_proto_enumTypes[2].Descriptor()
+}
+
+func (IconColor) Type() protoreflect.EnumType {
+	return &file_rustplus_proto_enumTypes[2]
+}
+
+func (x IconColor) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Do not use.
+func (x *IconColor) UnmarshalJSON(b []byte) error {
+	num, err := protoimpl.X.UnmarshalJSONEnum(x.Descriptor(), b)
+	if err != nil {
+		return err
+	}
+	*x = IconColor(num)
+	return nil
+}
+
+// Deprecated: Use IconColor.Descriptor instead.
+func (IconColor) EnumDescriptor() ([]byte, []int) {
+	return file_rustplus_proto_rawDescGZIP(), []int{2}
+}
+
 type AppMarkerType int32
 
 const (
-	AppMarkerType_Undefined        AppMarkerType = 0
+	AppMarkerType_Unknow           AppMarkerType = 0
 	AppMarkerType_Player           AppMarkerType = 1
 	AppMarkerType_Explosion        AppMarkerType = 2
 	AppMarkerType_VendingMachine   AppMarkerType = 3
@@ -98,7 +252,7 @@ const (
 // Enum value maps for AppMarkerType.
 var (
 	AppMarkerType_name = map[int32]string{
-		0: "Undefined",
+		0: "Unknow",
 		1: "Player",
 		2: "Explosion",
 		3: "VendingMachine",
@@ -109,7 +263,7 @@ var (
 		8: "PatrolHelicopter",
 	}
 	AppMarkerType_value = map[string]int32{
-		"Undefined":        0,
+		"Unknow":           0,
 		"Player":           1,
 		"Explosion":        2,
 		"VendingMachine":   3,
@@ -132,11 +286,11 @@ func (x AppMarkerType) String() string {
 }
 
 func (AppMarkerType) Descriptor() protoreflect.EnumDescriptor {
-	return file_rustplus_proto_enumTypes[1].Descriptor()
+	return file_rustplus_proto_enumTypes[3].Descriptor()
 }
 
 func (AppMarkerType) Type() protoreflect.EnumType {
-	return &file_rustplus_proto_enumTypes[1]
+	return &file_rustplus_proto_enumTypes[3]
 }
 
 func (x AppMarkerType) Number() protoreflect.EnumNumber {
@@ -155,7 +309,7 @@ func (x *AppMarkerType) UnmarshalJSON(b []byte) error {
 
 // Deprecated: Use AppMarkerType.Descriptor instead.
 func (AppMarkerType) EnumDescriptor() ([]byte, []int) {
-	return file_rustplus_proto_rawDescGZIP(), []int{1}
+	return file_rustplus_proto_rawDescGZIP(), []int{3}
 }
 
 type AppCameraRays_EntityType int32
@@ -188,11 +342,11 @@ func (x AppCameraRays_EntityType) String() string {
 }
 
 func (AppCameraRays_EntityType) Descriptor() protoreflect.EnumDescriptor {
-	return file_rustplus_proto_enumTypes[2].Descriptor()
+	return file_rustplus_proto_enumTypes[4].Descriptor()
 }
 
 func (AppCameraRays_EntityType) Type() protoreflect.EnumType {
-	return &file_rustplus_proto_enumTypes[2]
+	return &file_rustplus_proto_enumTypes[4]
 }
 
 func (x AppCameraRays_EntityType) Number() protoreflect.EnumNumber {
@@ -1160,7 +1314,7 @@ func (x *AppMessage) GetBroadcast() *AppBroadcast {
 
 type AppResponse struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
-	Seq                 *uint32                `protobuf:"varint,1,opt,name=seq" json:"seq,omitempty"`
+	Seq                 *uint32                `protobuf:"varint,1,req,name=seq" json:"seq,omitempty"`
 	Success             *AppSuccess            `protobuf:"bytes,4,opt,name=success" json:"success,omitempty"`
 	Error               *AppError              `protobuf:"bytes,5,opt,name=error" json:"error,omitempty"`
 	Info                *AppInfo               `protobuf:"bytes,6,opt,name=info" json:"info,omitempty"`
@@ -2052,7 +2206,7 @@ func (x *AppMap) GetBackground() string {
 
 type AppEntityInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Type          *AppEntityType         `protobuf:"varint,1,req,name=type,enum=rustplus.AppEntityType" json:"type,omitempty"`
+	Type          *AppEntityType         `protobuf:"varint,1,req,name=type,enum=rpclient.AppEntityType" json:"type,omitempty"`
 	Payload       *AppEntityPayload      `protobuf:"bytes,3,req,name=payload" json:"payload,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2179,13 +2333,11 @@ func (x *AppEntityPayload) GetProtectionExpiry() uint32 {
 }
 
 type AppTeamInfo struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	LeaderSteamId  *uint64                `protobuf:"varint,1,req,name=leaderSteamId" json:"leaderSteamId,omitempty"`
-	Members        []*AppTeamInfo_Member  `protobuf:"bytes,2,rep,name=members" json:"members,omitempty"`
-	MapNotes       []*AppTeamInfo_Note    `protobuf:"bytes,3,rep,name=mapNotes" json:"mapNotes,omitempty"`
-	LeaderMapNotes []*AppTeamInfo_Note    `protobuf:"bytes,4,rep,name=leaderMapNotes" json:"leaderMapNotes,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	LeaderSteamId *uint64                `protobuf:"varint,1,opt,name=leaderSteamId" json:"leaderSteamId,omitempty"`
+	Members       []*AppTeamInfo_Member  `protobuf:"bytes,2,rep,name=members" json:"members,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AppTeamInfo) Reset() {
@@ -2228,20 +2380,6 @@ func (x *AppTeamInfo) GetLeaderSteamId() uint64 {
 func (x *AppTeamInfo) GetMembers() []*AppTeamInfo_Member {
 	if x != nil {
 		return x.Members
-	}
-	return nil
-}
-
-func (x *AppTeamInfo) GetMapNotes() []*AppTeamInfo_Note {
-	if x != nil {
-		return x.MapNotes
-	}
-	return nil
-}
-
-func (x *AppTeamInfo) GetLeaderMapNotes() []*AppTeamInfo_Note {
-	if x != nil {
-		return x.LeaderMapNotes
 	}
 	return nil
 }
@@ -2369,7 +2507,7 @@ func (x *AppTeamChat) GetMessages() []*AppTeamMessage {
 type AppMarker struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            *uint32                `protobuf:"varint,1,req,name=id" json:"id,omitempty"`
-	Type          *AppMarkerType         `protobuf:"varint,2,req,name=type,enum=rustplus.AppMarkerType" json:"type,omitempty"`
+	Type          *AppMarkerType         `protobuf:"varint,2,req,name=type,enum=rpclient.AppMarkerType" json:"type,omitempty"`
 	X             *float32               `protobuf:"fixed32,3,req,name=x" json:"x,omitempty"`
 	Y             *float32               `protobuf:"fixed32,4,req,name=y" json:"y,omitempty"`
 	SteamId       *uint64                `protobuf:"varint,5,opt,name=steamId" json:"steamId,omitempty"`
@@ -2426,7 +2564,7 @@ func (x *AppMarker) GetType() AppMarkerType {
 	if x != nil && x.Type != nil {
 		return *x.Type
 	}
-	return AppMarkerType_Undefined
+	return AppMarkerType_Unknow
 }
 
 func (x *AppMarker) GetX() float32 {
@@ -3664,7 +3802,7 @@ func (x *ClanInvitations_Invitation) GetTimestamp() int64 {
 
 type AppMap_Monument struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Token         *string                `protobuf:"bytes,1,req,name=token" json:"token,omitempty"`
+	Name          *string                `protobuf:"bytes,1,req,name=name" json:"name,omitempty"`
 	X             *float32               `protobuf:"fixed32,2,req,name=x" json:"x,omitempty"`
 	Y             *float32               `protobuf:"fixed32,3,req,name=y" json:"y,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -3701,9 +3839,9 @@ func (*AppMap_Monument) Descriptor() ([]byte, []int) {
 	return file_rustplus_proto_rawDescGZIP(), []int{24, 0}
 }
 
-func (x *AppMap_Monument) GetToken() string {
-	if x != nil && x.Token != nil {
-		return *x.Token
+func (x *AppMap_Monument) GetName() string {
+	if x != nil && x.Name != nil {
+		return *x.Name
 	}
 	return ""
 }
@@ -3786,12 +3924,12 @@ type AppTeamInfo_Member struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SteamId       *uint64                `protobuf:"varint,1,req,name=steamId" json:"steamId,omitempty"`
 	Name          *string                `protobuf:"bytes,2,req,name=name" json:"name,omitempty"`
-	X             *float32               `protobuf:"fixed32,3,req,name=x" json:"x,omitempty"`
-	Y             *float32               `protobuf:"fixed32,4,req,name=y" json:"y,omitempty"`
-	IsOnline      *bool                  `protobuf:"varint,5,req,name=isOnline" json:"isOnline,omitempty"`
-	SpawnTime     *uint32                `protobuf:"varint,6,req,name=spawnTime" json:"spawnTime,omitempty"`
-	IsAlive       *bool                  `protobuf:"varint,7,req,name=isAlive" json:"isAlive,omitempty"`
-	DeathTime     *uint32                `protobuf:"varint,8,req,name=deathTime" json:"deathTime,omitempty"`
+	X             *float32               `protobuf:"fixed32,3,opt,name=x" json:"x,omitempty"`
+	Y             *float32               `protobuf:"fixed32,4,opt,name=y" json:"y,omitempty"`
+	IsOnline      *bool                  `protobuf:"varint,5,opt,name=isOnline" json:"isOnline,omitempty"`
+	SpawnTime     *uint32                `protobuf:"varint,6,opt,name=spawnTime" json:"spawnTime,omitempty"`
+	IsAlive       *bool                  `protobuf:"varint,7,opt,name=isAlive" json:"isAlive,omitempty"`
+	DeathTime     *uint32                `protobuf:"varint,8,opt,name=deathTime" json:"deathTime,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3887,6 +4025,9 @@ type AppTeamInfo_Note struct {
 	Type          *int32                 `protobuf:"varint,2,req,name=type" json:"type,omitempty"`
 	X             *float32               `protobuf:"fixed32,3,req,name=x" json:"x,omitempty"`
 	Y             *float32               `protobuf:"fixed32,4,req,name=y" json:"y,omitempty"`
+	Icon          *IconType              `protobuf:"varint,5,req,name=icon,enum=rpclient.IconType" json:"icon,omitempty"`
+	Colour        *IconColor             `protobuf:"varint,6,req,name=colour,enum=rpclient.IconColor" json:"colour,omitempty"`
+	Name          *string                `protobuf:"bytes,7,opt,name=name" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3940,6 +4081,27 @@ func (x *AppTeamInfo_Note) GetY() float32 {
 		return *x.Y
 	}
 	return 0
+}
+
+func (x *AppTeamInfo_Note) GetIcon() IconType {
+	if x != nil && x.Icon != nil {
+		return *x.Icon
+	}
+	return IconType_Default
+}
+
+func (x *AppTeamInfo_Note) GetColour() IconColor {
+	if x != nil && x.Colour != nil {
+		return *x.Colour
+	}
+	return IconColor_Yellow
+}
+
+func (x *AppTeamInfo_Note) GetName() string {
+	if x != nil && x.Name != nil {
+		return *x.Name
+	}
+	return ""
 }
 
 type AppMarker_SellOrder struct {
@@ -4053,7 +4215,7 @@ func (x *AppMarker_SellOrder) GetItemConditionMax() float32 {
 type AppCameraRays_Entity struct {
 	state         protoimpl.MessageState    `protogen:"open.v1"`
 	EntityId      *uint32                   `protobuf:"varint,1,req,name=entityId" json:"entityId,omitempty"`
-	Type          *AppCameraRays_EntityType `protobuf:"varint,2,req,name=type,enum=rustplus.AppCameraRays_EntityType" json:"type,omitempty"`
+	Type          *AppCameraRays_EntityType `protobuf:"varint,2,req,name=type,enum=rpclient.AppCameraRays_EntityType" json:"type,omitempty"`
 	Position      *Vector3                  `protobuf:"bytes,3,req,name=position" json:"position,omitempty"`
 	Rotation      *Vector3                  `protobuf:"bytes,4,req,name=rotation" json:"rotation,omitempty"`
 	Size          *Vector3                  `protobuf:"bytes,5,req,name=size" json:"size,omitempty"`
@@ -4138,7 +4300,7 @@ var File_rustplus_proto protoreflect.FileDescriptor
 
 const file_rustplus_proto_rawDesc = "" +
 	"\n" +
-	"\x0erustplus.proto\x12\brustplus\"%\n" +
+	"\x0erustplus.proto\x12\brpclient\"%\n" +
 	"\aVector2\x12\f\n" +
 	"\x01x\x18\x01 \x01(\x02R\x01x\x12\f\n" +
 	"\x01y\x18\x02 \x01(\x02R\x01y\"3\n" +
@@ -4161,13 +4323,13 @@ const file_rustplus_proto_rawDesc = "" +
 	"\x01b\x18\x03 \x01(\x02R\x01b\x12\f\n" +
 	"\x01a\x18\x04 \x01(\x02R\x01a\"a\n" +
 	"\x03Ray\x12)\n" +
-	"\x06origin\x18\x01 \x01(\v2\x11.rustplus.Vector3R\x06origin\x12/\n" +
-	"\tdirection\x18\x02 \x01(\v2\x11.rustplus.Vector3R\tdirection\"\x9a\x01\n" +
+	"\x06origin\x18\x01 \x01(\v2\x11.rpclient.Vector3R\x06origin\x12/\n" +
+	"\tdirection\x18\x02 \x01(\v2\x11.rpclient.Vector3R\tdirection\"\x9a\x01\n" +
 	"\x10ClanActionResult\x12\x1c\n" +
 	"\trequestId\x18\x01 \x02(\x05R\trequestId\x12\x16\n" +
 	"\x06result\x18\x02 \x02(\x05R\x06result\x12 \n" +
 	"\vhasClanInfo\x18\x03 \x02(\bR\vhasClanInfo\x12.\n" +
-	"\bclanInfo\x18\x04 \x01(\v2\x12.rustplus.ClanInfoR\bclanInfo\"\x81\b\n" +
+	"\bclanInfo\x18\x04 \x01(\v2\x12.rpclient.ClanInfoR\bclanInfo\"\x81\b\n" +
 	"\bClanInfo\x12\x16\n" +
 	"\x06clanId\x18\x01 \x02(\x03R\x06clanId\x12\x12\n" +
 	"\x04name\x18\x02 \x02(\tR\x04name\x12\x18\n" +
@@ -4181,9 +4343,9 @@ const file_rustplus_proto_rawDesc = "" +
 	"\x04logo\x18\b \x01(\fR\x04logo\x12\x14\n" +
 	"\x05color\x18\t \x01(\x11R\x05color\x12-\n" +
 	"\x05roles\x18\n" +
-	" \x03(\v2\x17.rustplus.ClanInfo.RoleR\x05roles\x123\n" +
-	"\amembers\x18\v \x03(\v2\x19.rustplus.ClanInfo.MemberR\amembers\x123\n" +
-	"\ainvites\x18\f \x03(\v2\x19.rustplus.ClanInfo.InviteR\ainvites\x12&\n" +
+	" \x03(\v2\x17.rpclient.ClanInfo.RoleR\x05roles\x123\n" +
+	"\amembers\x18\v \x03(\v2\x19.rpclient.ClanInfo.MemberR\amembers\x123\n" +
+	"\ainvites\x18\f \x03(\v2\x19.rpclient.ClanInfo.InviteR\ainvites\x12&\n" +
 	"\x0emaxMemberCount\x18\r \x01(\x05R\x0emaxMemberCount\x1a\xd0\x02\n" +
 	"\x04Role\x12\x16\n" +
 	"\x06roleId\x18\x01 \x02(\x05R\x06roleId\x12\x12\n" +
@@ -4218,7 +4380,7 @@ const file_rustplus_proto_rawDesc = "" +
 	"\aClanLog\x12\x16\n" +
 	"\x06clanId\x18\x01 \x02(\x03R\x06clanId\x127\n" +
 	"\n" +
-	"logEntries\x18\x02 \x03(\v2\x17.rustplus.ClanLog.EntryR\n" +
+	"logEntries\x18\x02 \x03(\v2\x17.rpclient.ClanLog.EntryR\n" +
 	"logEntries\x1a\x91\x01\n" +
 	"\x05Entry\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x02(\x03R\ttimestamp\x12\x1a\n" +
@@ -4228,7 +4390,7 @@ const file_rustplus_proto_rawDesc = "" +
 	"\x04arg3\x18\x05 \x01(\tR\x04arg3\x12\x12\n" +
 	"\x04arg4\x18\x06 \x01(\tR\x04arg4\"\xbb\x01\n" +
 	"\x0fClanInvitations\x12F\n" +
-	"\vinvitations\x18\x01 \x03(\v2$.rustplus.ClanInvitations.InvitationR\vinvitations\x1a`\n" +
+	"\vinvitations\x18\x01 \x03(\v2$.rpclient.ClanInvitations.InvitationR\vinvitations\x1a`\n" +
 	"\n" +
 	"Invitation\x12\x16\n" +
 	"\x06clanId\x18\x01 \x02(\x03R\x06clanId\x12\x1c\n" +
@@ -4241,61 +4403,61 @@ const file_rustplus_proto_rawDesc = "" +
 	"\bplayerId\x18\x02 \x02(\x04R\bplayerId\x12 \n" +
 	"\vplayerToken\x18\x03 \x02(\x05R\vplayerToken\x12\x1a\n" +
 	"\bentityId\x18\x04 \x01(\rR\bentityId\x12,\n" +
-	"\agetInfo\x18\b \x01(\v2\x12.rustplus.AppEmptyR\agetInfo\x12,\n" +
-	"\agetTime\x18\t \x01(\v2\x12.rustplus.AppEmptyR\agetTime\x12*\n" +
+	"\agetInfo\x18\b \x01(\v2\x12.rpclient.AppEmptyR\agetInfo\x12,\n" +
+	"\agetTime\x18\t \x01(\v2\x12.rpclient.AppEmptyR\agetTime\x12*\n" +
 	"\x06getMap\x18\n" +
-	" \x01(\v2\x12.rustplus.AppEmptyR\x06getMap\x124\n" +
-	"\vgetTeamInfo\x18\v \x01(\v2\x12.rustplus.AppEmptyR\vgetTeamInfo\x124\n" +
-	"\vgetTeamChat\x18\f \x01(\v2\x12.rustplus.AppEmptyR\vgetTeamChat\x12B\n" +
-	"\x0fsendTeamMessage\x18\r \x01(\v2\x18.rustplus.AppSendMessageR\x0fsendTeamMessage\x128\n" +
-	"\rgetEntityInfo\x18\x0e \x01(\v2\x12.rustplus.AppEmptyR\rgetEntityInfo\x12C\n" +
-	"\x0esetEntityValue\x18\x0f \x01(\v2\x1b.rustplus.AppSetEntityValueR\x0esetEntityValue\x12@\n" +
-	"\x11checkSubscription\x18\x10 \x01(\v2\x12.rustplus.AppEmptyR\x11checkSubscription\x12;\n" +
-	"\x0fsetSubscription\x18\x11 \x01(\v2\x11.rustplus.AppFlagR\x0fsetSubscription\x128\n" +
-	"\rgetMapMarkers\x18\x12 \x01(\v2\x12.rustplus.AppEmptyR\rgetMapMarkers\x12F\n" +
-	"\x0fpromoteToLeader\x18\x14 \x01(\v2\x1c.rustplus.AppPromoteToLeaderR\x0fpromoteToLeader\x124\n" +
-	"\vgetClanInfo\x18\x15 \x01(\v2\x12.rustplus.AppEmptyR\vgetClanInfo\x12:\n" +
-	"\vsetClanMotd\x18\x16 \x01(\v2\x18.rustplus.AppSendMessageR\vsetClanMotd\x124\n" +
-	"\vgetClanChat\x18\x17 \x01(\v2\x12.rustplus.AppEmptyR\vgetClanChat\x12B\n" +
-	"\x0fsendClanMessage\x18\x18 \x01(\v2\x18.rustplus.AppSendMessageR\x0fsendClanMessage\x12=\n" +
-	"\fgetNexusAuth\x18\x19 \x01(\v2\x19.rustplus.AppGetNexusAuthR\fgetNexusAuth\x12F\n" +
-	"\x0fcameraSubscribe\x18\x1e \x01(\v2\x1c.rustplus.AppCameraSubscribeR\x0fcameraSubscribe\x12@\n" +
-	"\x11cameraUnsubscribe\x18\x1f \x01(\v2\x12.rustplus.AppEmptyR\x11cameraUnsubscribe\x12:\n" +
-	"\vcameraInput\x18  \x01(\v2\x18.rustplus.AppCameraInputR\vcameraInput\"u\n" +
+	" \x01(\v2\x12.rpclient.AppEmptyR\x06getMap\x124\n" +
+	"\vgetTeamInfo\x18\v \x01(\v2\x12.rpclient.AppEmptyR\vgetTeamInfo\x124\n" +
+	"\vgetTeamChat\x18\f \x01(\v2\x12.rpclient.AppEmptyR\vgetTeamChat\x12B\n" +
+	"\x0fsendTeamMessage\x18\r \x01(\v2\x18.rpclient.AppSendMessageR\x0fsendTeamMessage\x128\n" +
+	"\rgetEntityInfo\x18\x0e \x01(\v2\x12.rpclient.AppEmptyR\rgetEntityInfo\x12C\n" +
+	"\x0esetEntityValue\x18\x0f \x01(\v2\x1b.rpclient.AppSetEntityValueR\x0esetEntityValue\x12@\n" +
+	"\x11checkSubscription\x18\x10 \x01(\v2\x12.rpclient.AppEmptyR\x11checkSubscription\x12;\n" +
+	"\x0fsetSubscription\x18\x11 \x01(\v2\x11.rpclient.AppFlagR\x0fsetSubscription\x128\n" +
+	"\rgetMapMarkers\x18\x12 \x01(\v2\x12.rpclient.AppEmptyR\rgetMapMarkers\x12F\n" +
+	"\x0fpromoteToLeader\x18\x14 \x01(\v2\x1c.rpclient.AppPromoteToLeaderR\x0fpromoteToLeader\x124\n" +
+	"\vgetClanInfo\x18\x15 \x01(\v2\x12.rpclient.AppEmptyR\vgetClanInfo\x12:\n" +
+	"\vsetClanMotd\x18\x16 \x01(\v2\x18.rpclient.AppSendMessageR\vsetClanMotd\x124\n" +
+	"\vgetClanChat\x18\x17 \x01(\v2\x12.rpclient.AppEmptyR\vgetClanChat\x12B\n" +
+	"\x0fsendClanMessage\x18\x18 \x01(\v2\x18.rpclient.AppSendMessageR\x0fsendClanMessage\x12=\n" +
+	"\fgetNexusAuth\x18\x19 \x01(\v2\x19.rpclient.AppGetNexusAuthR\fgetNexusAuth\x12F\n" +
+	"\x0fcameraSubscribe\x18\x1e \x01(\v2\x1c.rpclient.AppCameraSubscribeR\x0fcameraSubscribe\x12@\n" +
+	"\x11cameraUnsubscribe\x18\x1f \x01(\v2\x12.rpclient.AppEmptyR\x11cameraUnsubscribe\x12:\n" +
+	"\vcameraInput\x18  \x01(\v2\x18.rpclient.AppCameraInputR\vcameraInput\"u\n" +
 	"\n" +
 	"AppMessage\x121\n" +
-	"\bresponse\x18\x01 \x01(\v2\x15.rustplus.AppResponseR\bresponse\x124\n" +
-	"\tbroadcast\x18\x02 \x01(\v2\x16.rustplus.AppBroadcastR\tbroadcast\"\xd1\x05\n" +
+	"\bresponse\x18\x01 \x01(\v2\x15.rpclient.AppResponseR\bresponse\x124\n" +
+	"\tbroadcast\x18\x02 \x01(\v2\x16.rpclient.AppBroadcastR\tbroadcast\"\xd1\x05\n" +
 	"\vAppResponse\x12\x10\n" +
 	"\x03seq\x18\x01 \x02(\rR\x03seq\x12.\n" +
-	"\asuccess\x18\x04 \x01(\v2\x14.rustplus.AppSuccessR\asuccess\x12(\n" +
-	"\x05error\x18\x05 \x01(\v2\x12.rustplus.AppErrorR\x05error\x12%\n" +
-	"\x04info\x18\x06 \x01(\v2\x11.rustplus.AppInfoR\x04info\x12%\n" +
-	"\x04time\x18\a \x01(\v2\x11.rustplus.AppTimeR\x04time\x12\"\n" +
-	"\x03map\x18\b \x01(\v2\x10.rustplus.AppMapR\x03map\x121\n" +
-	"\bteamInfo\x18\t \x01(\v2\x15.rustplus.AppTeamInfoR\bteamInfo\x121\n" +
+	"\asuccess\x18\x04 \x01(\v2\x14.rpclient.AppSuccessR\asuccess\x12(\n" +
+	"\x05error\x18\x05 \x01(\v2\x12.rpclient.AppErrorR\x05error\x12%\n" +
+	"\x04info\x18\x06 \x01(\v2\x11.rpclient.AppInfoR\x04info\x12%\n" +
+	"\x04time\x18\a \x01(\v2\x11.rpclient.AppTimeR\x04time\x12\"\n" +
+	"\x03map\x18\b \x01(\v2\x10.rpclient.AppMapR\x03map\x121\n" +
+	"\bteamInfo\x18\t \x01(\v2\x15.rpclient.AppTeamInfoR\bteamInfo\x121\n" +
 	"\bteamChat\x18\n" +
-	" \x01(\v2\x15.rustplus.AppTeamChatR\bteamChat\x127\n" +
+	" \x01(\v2\x15.rpclient.AppTeamChatR\bteamChat\x127\n" +
 	"\n" +
-	"entityInfo\x18\v \x01(\v2\x17.rustplus.AppEntityInfoR\n" +
+	"entityInfo\x18\v \x01(\v2\x17.rpclient.AppEntityInfoR\n" +
 	"entityInfo\x12%\n" +
-	"\x04flag\x18\f \x01(\v2\x11.rustplus.AppFlagR\x04flag\x127\n" +
+	"\x04flag\x18\f \x01(\v2\x11.rpclient.AppFlagR\x04flag\x127\n" +
 	"\n" +
-	"mapMarkers\x18\r \x01(\v2\x17.rustplus.AppMapMarkersR\n" +
+	"mapMarkers\x18\r \x01(\v2\x17.rpclient.AppMapMarkersR\n" +
 	"mapMarkers\x121\n" +
-	"\bclanInfo\x18\x0f \x01(\v2\x15.rustplus.AppClanInfoR\bclanInfo\x121\n" +
-	"\bclanChat\x18\x10 \x01(\v2\x15.rustplus.AppClanChatR\bclanChat\x124\n" +
-	"\tnexusAuth\x18\x11 \x01(\v2\x16.rustplus.AppNexusAuthR\tnexusAuth\x12I\n" +
-	"\x13cameraSubscribeInfo\x18\x14 \x01(\v2\x17.rustplus.AppCameraInfoR\x13cameraSubscribeInfo\"\xff\x02\n" +
+	"\bclanInfo\x18\x0f \x01(\v2\x15.rpclient.AppClanInfoR\bclanInfo\x121\n" +
+	"\bclanChat\x18\x10 \x01(\v2\x15.rpclient.AppClanChatR\bclanChat\x124\n" +
+	"\tnexusAuth\x18\x11 \x01(\v2\x16.rpclient.AppNexusAuthR\tnexusAuth\x12I\n" +
+	"\x13cameraSubscribeInfo\x18\x14 \x01(\v2\x17.rpclient.AppCameraInfoR\x13cameraSubscribeInfo\"\xff\x02\n" +
 	"\fAppBroadcast\x12:\n" +
-	"\vteamChanged\x18\x04 \x01(\v2\x18.rustplus.AppTeamChangedR\vteamChanged\x12=\n" +
-	"\vteamMessage\x18\x05 \x01(\v2\x1b.rustplus.AppNewTeamMessageR\vteamMessage\x12@\n" +
-	"\rentityChanged\x18\x06 \x01(\v2\x1a.rustplus.AppEntityChangedR\rentityChanged\x12:\n" +
-	"\vclanChanged\x18\a \x01(\v2\x18.rustplus.AppClanChangedR\vclanChanged\x12=\n" +
-	"\vclanMessage\x18\b \x01(\v2\x1b.rustplus.AppNewClanMessageR\vclanMessage\x127\n" +
+	"\vteamChanged\x18\x04 \x01(\v2\x18.rpclient.AppTeamChangedR\vteamChanged\x12=\n" +
+	"\vteamMessage\x18\x05 \x01(\v2\x1b.rpclient.AppNewTeamMessageR\vteamMessage\x12@\n" +
+	"\rentityChanged\x18\x06 \x01(\v2\x1a.rpclient.AppEntityChangedR\rentityChanged\x12:\n" +
+	"\vclanChanged\x18\a \x01(\v2\x18.rpclient.AppClanChangedR\vclanChanged\x12=\n" +
+	"\vclanMessage\x18\b \x01(\v2\x1b.rpclient.AppNewClanMessageR\vclanMessage\x127\n" +
 	"\n" +
 	"cameraRays\x18\n" +
-	" \x01(\v2\x17.rustplus.AppCameraRaysR\n" +
+	" \x01(\v2\x17.rpclient.AppCameraRaysR\n" +
 	"cameraRays\"\n" +
 	"\n" +
 	"\bAppEmpty\"*\n" +
@@ -4337,51 +4499,52 @@ const file_rustplus_proto_rawDesc = "" +
 	"\ttimeScale\x18\x02 \x02(\x02R\ttimeScale\x12\x18\n" +
 	"\asunrise\x18\x03 \x02(\x02R\asunrise\x12\x16\n" +
 	"\x06sunset\x18\x04 \x02(\x02R\x06sunset\x12\x12\n" +
-	"\x04time\x18\x05 \x02(\x02R\x04time\"\x8b\x02\n" +
+	"\x04time\x18\x05 \x02(\x02R\x04time\"\x89\x02\n" +
 	"\x06AppMap\x12\x14\n" +
 	"\x05width\x18\x01 \x02(\rR\x05width\x12\x16\n" +
 	"\x06height\x18\x02 \x02(\rR\x06height\x12\x1a\n" +
 	"\bjpgImage\x18\x03 \x02(\fR\bjpgImage\x12 \n" +
 	"\voceanMargin\x18\x04 \x02(\x05R\voceanMargin\x127\n" +
-	"\tmonuments\x18\x05 \x03(\v2\x19.rustplus.AppMap.MonumentR\tmonuments\x12\x1e\n" +
+	"\tmonuments\x18\x05 \x03(\v2\x19.rpclient.AppMap.MonumentR\tmonuments\x12\x1e\n" +
 	"\n" +
 	"background\x18\x06 \x01(\tR\n" +
-	"background\x1a<\n" +
-	"\bMonument\x12\x14\n" +
-	"\x05token\x18\x01 \x02(\tR\x05token\x12\f\n" +
+	"background\x1a:\n" +
+	"\bMonument\x12\x12\n" +
+	"\x04name\x18\x01 \x02(\tR\x04name\x12\f\n" +
 	"\x01x\x18\x02 \x02(\x02R\x01x\x12\f\n" +
 	"\x01y\x18\x03 \x02(\x02R\x01y\"r\n" +
 	"\rAppEntityInfo\x12+\n" +
-	"\x04type\x18\x01 \x02(\x0e2\x17.rustplus.AppEntityTypeR\x04type\x124\n" +
-	"\apayload\x18\x03 \x02(\v2\x1a.rustplus.AppEntityPayloadR\apayload\"\xb3\x02\n" +
+	"\x04type\x18\x01 \x02(\x0e2\x17.rpclient.AppEntityTypeR\x04type\x124\n" +
+	"\apayload\x18\x03 \x02(\v2\x1a.rpclient.AppEntityPayloadR\apayload\"\xb3\x02\n" +
 	"\x10AppEntityPayload\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\bR\x05value\x125\n" +
-	"\x05items\x18\x02 \x03(\v2\x1f.rustplus.AppEntityPayload.ItemR\x05items\x12\x1a\n" +
+	"\x05items\x18\x02 \x03(\v2\x1f.rpclient.AppEntityPayload.ItemR\x05items\x12\x1a\n" +
 	"\bcapacity\x18\x03 \x01(\x05R\bcapacity\x12$\n" +
 	"\rhasProtection\x18\x04 \x01(\bR\rhasProtection\x12*\n" +
 	"\x10protectionExpiry\x18\x05 \x01(\rR\x10protectionExpiry\x1ad\n" +
 	"\x04Item\x12\x16\n" +
 	"\x06itemId\x18\x01 \x02(\x05R\x06itemId\x12\x1a\n" +
 	"\bquantity\x18\x02 \x02(\x05R\bquantity\x12(\n" +
-	"\x0fitemIsBlueprint\x18\x03 \x02(\bR\x0fitemIsBlueprint\"\xe6\x03\n" +
+	"\x0fitemIsBlueprint\x18\x03 \x02(\bR\x0fitemIsBlueprint\"\xd4\x03\n" +
 	"\vAppTeamInfo\x12$\n" +
-	"\rleaderSteamId\x18\x01 \x02(\x04R\rleaderSteamId\x126\n" +
-	"\amembers\x18\x02 \x03(\v2\x1c.rustplus.AppTeamInfo.MemberR\amembers\x126\n" +
-	"\bmapNotes\x18\x03 \x03(\v2\x1a.rustplus.AppTeamInfo.NoteR\bmapNotes\x12B\n" +
-	"\x0eleaderMapNotes\x18\x04 \x03(\v2\x1a.rustplus.AppTeamInfo.NoteR\x0eleaderMapNotes\x1a\xc4\x01\n" +
+	"\rleaderSteamId\x18\x01 \x01(\x04R\rleaderSteamId\x126\n" +
+	"\amembers\x18\x02 \x03(\v2\x1c.rpclient.AppTeamInfo.MemberR\amembers\x1a\xc4\x01\n" +
 	"\x06Member\x12\x18\n" +
 	"\asteamId\x18\x01 \x02(\x04R\asteamId\x12\x12\n" +
 	"\x04name\x18\x02 \x02(\tR\x04name\x12\f\n" +
-	"\x01x\x18\x03 \x02(\x02R\x01x\x12\f\n" +
-	"\x01y\x18\x04 \x02(\x02R\x01y\x12\x1a\n" +
-	"\bisOnline\x18\x05 \x02(\bR\bisOnline\x12\x1c\n" +
-	"\tspawnTime\x18\x06 \x02(\rR\tspawnTime\x12\x18\n" +
-	"\aisAlive\x18\a \x02(\bR\aisAlive\x12\x1c\n" +
-	"\tdeathTime\x18\b \x02(\rR\tdeathTime\x1a6\n" +
+	"\x01x\x18\x03 \x01(\x02R\x01x\x12\f\n" +
+	"\x01y\x18\x04 \x01(\x02R\x01y\x12\x1a\n" +
+	"\bisOnline\x18\x05 \x01(\bR\bisOnline\x12\x1c\n" +
+	"\tspawnTime\x18\x06 \x01(\rR\tspawnTime\x12\x18\n" +
+	"\aisAlive\x18\a \x01(\bR\aisAlive\x12\x1c\n" +
+	"\tdeathTime\x18\b \x01(\rR\tdeathTime\x1a\x9f\x01\n" +
 	"\x04Note\x12\x12\n" +
 	"\x04type\x18\x02 \x02(\x05R\x04type\x12\f\n" +
 	"\x01x\x18\x03 \x02(\x02R\x01x\x12\f\n" +
-	"\x01y\x18\x04 \x02(\x02R\x01y\"\x82\x01\n" +
+	"\x01y\x18\x04 \x02(\x02R\x01y\x12&\n" +
+	"\x04icon\x18\x05 \x02(\x0e2\x12.rpclient.IconTypeR\x04icon\x12+\n" +
+	"\x06colour\x18\x06 \x02(\x0e2\x13.rpclient.IconColorR\x06colour\x12\x12\n" +
+	"\x04name\x18\a \x01(\tR\x04name\"\x82\x01\n" +
 	"\x0eAppTeamMessage\x12\x18\n" +
 	"\asteamId\x18\x01 \x02(\x04R\asteamId\x12\x12\n" +
 	"\x04name\x18\x02 \x02(\tR\x04name\x12\x18\n" +
@@ -4389,17 +4552,17 @@ const file_rustplus_proto_rawDesc = "" +
 	"\x05color\x18\x04 \x02(\tR\x05color\x12\x12\n" +
 	"\x04time\x18\x05 \x02(\rR\x04time\"C\n" +
 	"\vAppTeamChat\x124\n" +
-	"\bmessages\x18\x01 \x03(\v2\x18.rustplus.AppTeamMessageR\bmessages\"\xe9\x05\n" +
+	"\bmessages\x18\x01 \x03(\v2\x18.rpclient.AppTeamMessageR\bmessages\"\xe9\x05\n" +
 	"\tAppMarker\x12\x0e\n" +
 	"\x02id\x18\x01 \x02(\rR\x02id\x12+\n" +
-	"\x04type\x18\x02 \x02(\x0e2\x17.rustplus.AppMarkerTypeR\x04type\x12\f\n" +
+	"\x04type\x18\x02 \x02(\x0e2\x17.rpclient.AppMarkerTypeR\x04type\x12\f\n" +
 	"\x01x\x18\x03 \x02(\x02R\x01x\x12\f\n" +
 	"\x01y\x18\x04 \x02(\x02R\x01y\x12\x18\n" +
 	"\asteamId\x18\x05 \x01(\x04R\asteamId\x12\x1a\n" +
 	"\brotation\x18\x06 \x01(\x02R\brotation\x12\x16\n" +
 	"\x06radius\x18\a \x01(\x02R\x06radius\x12)\n" +
-	"\x06color1\x18\b \x01(\v2\x11.rustplus.Vector4R\x06color1\x12)\n" +
-	"\x06color2\x18\t \x01(\v2\x11.rustplus.Vector4R\x06color2\x12\x14\n" +
+	"\x06color1\x18\b \x01(\v2\x11.rpclient.Vector4R\x06color1\x12)\n" +
+	"\x06color2\x18\t \x01(\v2\x11.rpclient.Vector4R\x06color2\x12\x14\n" +
 	"\x05alpha\x18\n" +
 	" \x01(\x02R\x05alpha\x12\x12\n" +
 	"\x04name\x18\v \x01(\tR\x04name\x12\x1e\n" +
@@ -4407,7 +4570,7 @@ const file_rustplus_proto_rawDesc = "" +
 	"outOfStock\x18\f \x01(\bR\n" +
 	"outOfStock\x12=\n" +
 	"\n" +
-	"sellOrders\x18\r \x03(\v2\x1d.rustplus.AppMarker.SellOrderR\n" +
+	"sellOrders\x18\r \x03(\v2\x1d.rpclient.AppMarker.SellOrderR\n" +
 	"sellOrders\x1a\xd5\x02\n" +
 	"\tSellOrder\x12\x16\n" +
 	"\x06itemId\x18\x01 \x02(\x05R\x06itemId\x12\x1a\n" +
@@ -4422,38 +4585,38 @@ const file_rustplus_proto_rawDesc = "" +
 	"\ritemCondition\x18\b \x01(\x02R\ritemCondition\x12*\n" +
 	"\x10itemConditionMax\x18\t \x01(\x02R\x10itemConditionMax\">\n" +
 	"\rAppMapMarkers\x12-\n" +
-	"\amarkers\x18\x01 \x03(\v2\x13.rustplus.AppMarkerR\amarkers\"=\n" +
+	"\amarkers\x18\x01 \x03(\v2\x13.rpclient.AppMarkerR\amarkers\"=\n" +
 	"\vAppClanInfo\x12.\n" +
-	"\bclanInfo\x18\x01 \x01(\v2\x12.rustplus.ClanInfoR\bclanInfo\"l\n" +
+	"\bclanInfo\x18\x01 \x01(\v2\x12.rpclient.ClanInfoR\bclanInfo\"l\n" +
 	"\x0eAppClanMessage\x12\x18\n" +
 	"\asteamId\x18\x01 \x02(\x04R\asteamId\x12\x12\n" +
 	"\x04name\x18\x02 \x02(\tR\x04name\x12\x18\n" +
 	"\amessage\x18\x03 \x02(\tR\amessage\x12\x12\n" +
 	"\x04time\x18\x04 \x02(\x03R\x04time\"C\n" +
 	"\vAppClanChat\x124\n" +
-	"\bmessages\x18\x01 \x03(\v2\x18.rustplus.AppClanMessageR\bmessages\"L\n" +
+	"\bmessages\x18\x01 \x03(\v2\x18.rpclient.AppClanMessageR\bmessages\"L\n" +
 	"\fAppNexusAuth\x12\x1a\n" +
 	"\bserverId\x18\x01 \x02(\tR\bserverId\x12 \n" +
 	"\vplayerToken\x18\x02 \x02(\x05R\vplayerToken\"_\n" +
 	"\x0eAppTeamChanged\x12\x1a\n" +
 	"\bplayerId\x18\x01 \x02(\x04R\bplayerId\x121\n" +
-	"\bteamInfo\x18\x02 \x02(\v2\x15.rustplus.AppTeamInfoR\bteamInfo\"G\n" +
+	"\bteamInfo\x18\x02 \x02(\v2\x15.rpclient.AppTeamInfoR\bteamInfo\"G\n" +
 	"\x11AppNewTeamMessage\x122\n" +
-	"\amessage\x18\x01 \x02(\v2\x18.rustplus.AppTeamMessageR\amessage\"d\n" +
+	"\amessage\x18\x01 \x02(\v2\x18.rpclient.AppTeamMessageR\amessage\"d\n" +
 	"\x10AppEntityChanged\x12\x1a\n" +
 	"\bentityId\x18\x01 \x02(\rR\bentityId\x124\n" +
-	"\apayload\x18\x02 \x02(\v2\x1a.rustplus.AppEntityPayloadR\apayload\"@\n" +
+	"\apayload\x18\x02 \x02(\v2\x1a.rpclient.AppEntityPayloadR\apayload\"@\n" +
 	"\x0eAppClanChanged\x12.\n" +
-	"\bclanInfo\x18\x01 \x01(\v2\x12.rustplus.ClanInfoR\bclanInfo\"_\n" +
+	"\bclanInfo\x18\x01 \x01(\v2\x12.rpclient.ClanInfoR\bclanInfo\"_\n" +
 	"\x11AppNewClanMessage\x12\x16\n" +
 	"\x06clanId\x18\x01 \x02(\x03R\x06clanId\x122\n" +
-	"\amessage\x18\x02 \x02(\v2\x18.rustplus.AppClanMessageR\amessage\"0\n" +
+	"\amessage\x18\x02 \x02(\v2\x18.rpclient.AppClanMessageR\amessage\"0\n" +
 	"\x12AppCameraSubscribe\x12\x1a\n" +
 	"\bcameraId\x18\x01 \x02(\tR\bcameraId\"]\n" +
 	"\x0eAppCameraInput\x12\x18\n" +
 	"\abuttons\x18\x01 \x02(\x05R\abuttons\x121\n" +
 	"\n" +
-	"mouseDelta\x18\x02 \x02(\v2\x11.rustplus.Vector2R\n" +
+	"mouseDelta\x18\x02 \x02(\v2\x11.rpclient.Vector2R\n" +
 	"mouseDelta\"\x9b\x01\n" +
 	"\rAppCameraInfo\x12\x14\n" +
 	"\x05width\x18\x01 \x02(\x05R\x05width\x12\x16\n" +
@@ -4466,13 +4629,13 @@ const file_rustplus_proto_rawDesc = "" +
 	"\fsampleOffset\x18\x02 \x02(\x05R\fsampleOffset\x12\x18\n" +
 	"\arayData\x18\x03 \x02(\fR\arayData\x12\x1a\n" +
 	"\bdistance\x18\x04 \x02(\x02R\bdistance\x12:\n" +
-	"\bentities\x18\x05 \x03(\v2\x1e.rustplus.AppCameraRays.EntityR\bentities\x1a\xf5\x01\n" +
+	"\bentities\x18\x05 \x03(\v2\x1e.rpclient.AppCameraRays.EntityR\bentities\x1a\xf5\x01\n" +
 	"\x06Entity\x12\x1a\n" +
 	"\bentityId\x18\x01 \x02(\rR\bentityId\x126\n" +
-	"\x04type\x18\x02 \x02(\x0e2\".rustplus.AppCameraRays.EntityTypeR\x04type\x12-\n" +
-	"\bposition\x18\x03 \x02(\v2\x11.rustplus.Vector3R\bposition\x12-\n" +
-	"\brotation\x18\x04 \x02(\v2\x11.rustplus.Vector3R\brotation\x12%\n" +
-	"\x04size\x18\x05 \x02(\v2\x11.rustplus.Vector3R\x04size\x12\x12\n" +
+	"\x04type\x18\x02 \x02(\x0e2\".rpclient.AppCameraRays.EntityTypeR\x04type\x12-\n" +
+	"\bposition\x18\x03 \x02(\v2\x11.rpclient.Vector3R\bposition\x12-\n" +
+	"\brotation\x18\x04 \x02(\v2\x11.rpclient.Vector3R\brotation\x12%\n" +
+	"\x04size\x18\x05 \x02(\v2\x11.rpclient.Vector3R\x04size\x12\x12\n" +
 	"\x04name\x18\x06 \x01(\tR\x04name\"\"\n" +
 	"\n" +
 	"EntityType\x12\b\n" +
@@ -4483,9 +4646,34 @@ const file_rustplus_proto_rawDesc = "" +
 	"\n" +
 	"\x06Switch\x10\x01\x12\t\n" +
 	"\x05Alarm\x10\x02\x12\x12\n" +
-	"\x0eStorageMonitor\x10\x03*\x9a\x01\n" +
-	"\rAppMarkerType\x12\r\n" +
-	"\tUndefined\x10\x00\x12\n" +
+	"\x0eStorageMonitor\x10\x03*\x8a\x01\n" +
+	"\bIconType\x12\v\n" +
+	"\aDefault\x10\x00\x12\t\n" +
+	"\x05Money\x10\x01\x12\b\n" +
+	"\x04Home\x10\x02\x12\b\n" +
+	"\x04Drop\x10\x03\x12\t\n" +
+	"\x05Sight\x10\x04\x12\n" +
+	"\n" +
+	"\x06Shield\x10\x05\x12\t\n" +
+	"\x05Skull\x10\x06\x12\a\n" +
+	"\x03Bed\x10\a\x12\t\n" +
+	"\x05Sleep\x10\b\x12\a\n" +
+	"\x03Gun\x10\t\x12\b\n" +
+	"\x04Rock\x10\n" +
+	"\x12\t\n" +
+	"\x05Chest\x10\v*K\n" +
+	"\tIconColor\x12\n" +
+	"\n" +
+	"\x06Yellow\x10\x00\x12\b\n" +
+	"\x04Blue\x10\x01\x12\t\n" +
+	"\x05Green\x10\x02\x12\a\n" +
+	"\x03Red\x10\x03\x12\n" +
+	"\n" +
+	"\x06Purple\x10\x04\x12\b\n" +
+	"\x04Cyan\x10\x05*\x97\x01\n" +
+	"\rAppMarkerType\x12\n" +
+	"\n" +
+	"\x06Unknow\x10\x00\x12\n" +
 	"\n" +
 	"\x06Player\x10\x01\x12\r\n" +
 	"\tExplosion\x10\x02\x12\x12\n" +
@@ -4494,7 +4682,7 @@ const file_rustplus_proto_rawDesc = "" +
 	"\tCargoShip\x10\x05\x12\t\n" +
 	"\x05Crate\x10\x06\x12\x11\n" +
 	"\rGenericRadius\x10\a\x12\x14\n" +
-	"\x10PatrolHelicopter\x10\bB/Z-example.com/rustplusbot/pkg/rustplus;rustplus"
+	"\x10PatrolHelicopter\x10\bB/Z-example.com/rustplusbot/pkg/rpclient;rpclient"
 
 var (
 	file_rustplus_proto_rawDescOnce sync.Once
@@ -4508,146 +4696,148 @@ func file_rustplus_proto_rawDescGZIP() []byte {
 	return file_rustplus_proto_rawDescData
 }
 
-var file_rustplus_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_rustplus_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
 var file_rustplus_proto_msgTypes = make([]protoimpl.MessageInfo, 56)
 var file_rustplus_proto_goTypes = []any{
-	(AppEntityType)(0),                 // 0: rustplus.AppEntityType
-	(AppMarkerType)(0),                 // 1: rustplus.AppMarkerType
-	(AppCameraRays_EntityType)(0),      // 2: rustplus.AppCameraRays.EntityType
-	(*Vector2)(nil),                    // 3: rustplus.Vector2
-	(*Vector3)(nil),                    // 4: rustplus.Vector3
-	(*Vector4)(nil),                    // 5: rustplus.Vector4
-	(*Half3)(nil),                      // 6: rustplus.Half3
-	(*Color)(nil),                      // 7: rustplus.Color
-	(*Ray)(nil),                        // 8: rustplus.Ray
-	(*ClanActionResult)(nil),           // 9: rustplus.ClanActionResult
-	(*ClanInfo)(nil),                   // 10: rustplus.ClanInfo
-	(*ClanLog)(nil),                    // 11: rustplus.ClanLog
-	(*ClanInvitations)(nil),            // 12: rustplus.ClanInvitations
-	(*AppRequest)(nil),                 // 13: rustplus.AppRequest
-	(*AppMessage)(nil),                 // 14: rustplus.AppMessage
-	(*AppResponse)(nil),                // 15: rustplus.AppResponse
-	(*AppBroadcast)(nil),               // 16: rustplus.AppBroadcast
-	(*AppEmpty)(nil),                   // 17: rustplus.AppEmpty
-	(*AppSendMessage)(nil),             // 18: rustplus.AppSendMessage
-	(*AppSetEntityValue)(nil),          // 19: rustplus.AppSetEntityValue
-	(*AppPromoteToLeader)(nil),         // 20: rustplus.AppPromoteToLeader
-	(*AppGetNexusAuth)(nil),            // 21: rustplus.AppGetNexusAuth
-	(*AppSuccess)(nil),                 // 22: rustplus.AppSuccess
-	(*AppError)(nil),                   // 23: rustplus.AppError
-	(*AppFlag)(nil),                    // 24: rustplus.AppFlag
-	(*AppInfo)(nil),                    // 25: rustplus.AppInfo
-	(*AppTime)(nil),                    // 26: rustplus.AppTime
-	(*AppMap)(nil),                     // 27: rustplus.AppMap
-	(*AppEntityInfo)(nil),              // 28: rustplus.AppEntityInfo
-	(*AppEntityPayload)(nil),           // 29: rustplus.AppEntityPayload
-	(*AppTeamInfo)(nil),                // 30: rustplus.AppTeamInfo
-	(*AppTeamMessage)(nil),             // 31: rustplus.AppTeamMessage
-	(*AppTeamChat)(nil),                // 32: rustplus.AppTeamChat
-	(*AppMarker)(nil),                  // 33: rustplus.AppMarker
-	(*AppMapMarkers)(nil),              // 34: rustplus.AppMapMarkers
-	(*AppClanInfo)(nil),                // 35: rustplus.AppClanInfo
-	(*AppClanMessage)(nil),             // 36: rustplus.AppClanMessage
-	(*AppClanChat)(nil),                // 37: rustplus.AppClanChat
-	(*AppNexusAuth)(nil),               // 38: rustplus.AppNexusAuth
-	(*AppTeamChanged)(nil),             // 39: rustplus.AppTeamChanged
-	(*AppNewTeamMessage)(nil),          // 40: rustplus.AppNewTeamMessage
-	(*AppEntityChanged)(nil),           // 41: rustplus.AppEntityChanged
-	(*AppClanChanged)(nil),             // 42: rustplus.AppClanChanged
-	(*AppNewClanMessage)(nil),          // 43: rustplus.AppNewClanMessage
-	(*AppCameraSubscribe)(nil),         // 44: rustplus.AppCameraSubscribe
-	(*AppCameraInput)(nil),             // 45: rustplus.AppCameraInput
-	(*AppCameraInfo)(nil),              // 46: rustplus.AppCameraInfo
-	(*AppCameraRays)(nil),              // 47: rustplus.AppCameraRays
-	(*ClanInfo_Role)(nil),              // 48: rustplus.ClanInfo.Role
-	(*ClanInfo_Member)(nil),            // 49: rustplus.ClanInfo.Member
-	(*ClanInfo_Invite)(nil),            // 50: rustplus.ClanInfo.Invite
-	(*ClanLog_Entry)(nil),              // 51: rustplus.ClanLog.Entry
-	(*ClanInvitations_Invitation)(nil), // 52: rustplus.ClanInvitations.Invitation
-	(*AppMap_Monument)(nil),            // 53: rustplus.AppMap.Monument
-	(*AppEntityPayload_Item)(nil),      // 54: rustplus.AppEntityPayload.Item
-	(*AppTeamInfo_Member)(nil),         // 55: rustplus.AppTeamInfo.Member
-	(*AppTeamInfo_Note)(nil),           // 56: rustplus.AppTeamInfo.Note
-	(*AppMarker_SellOrder)(nil),        // 57: rustplus.AppMarker.SellOrder
-	(*AppCameraRays_Entity)(nil),       // 58: rustplus.AppCameraRays.Entity
+	(AppEntityType)(0),                 // 0: rpclient.AppEntityType
+	(IconType)(0),                      // 1: rpclient.IconType
+	(IconColor)(0),                     // 2: rpclient.IconColor
+	(AppMarkerType)(0),                 // 3: rpclient.AppMarkerType
+	(AppCameraRays_EntityType)(0),      // 4: rpclient.AppCameraRays.EntityType
+	(*Vector2)(nil),                    // 5: rpclient.Vector2
+	(*Vector3)(nil),                    // 6: rpclient.Vector3
+	(*Vector4)(nil),                    // 7: rpclient.Vector4
+	(*Half3)(nil),                      // 8: rpclient.Half3
+	(*Color)(nil),                      // 9: rpclient.Color
+	(*Ray)(nil),                        // 10: rpclient.Ray
+	(*ClanActionResult)(nil),           // 11: rpclient.ClanActionResult
+	(*ClanInfo)(nil),                   // 12: rpclient.ClanInfo
+	(*ClanLog)(nil),                    // 13: rpclient.ClanLog
+	(*ClanInvitations)(nil),            // 14: rpclient.ClanInvitations
+	(*AppRequest)(nil),                 // 15: rpclient.AppRequest
+	(*AppMessage)(nil),                 // 16: rpclient.AppMessage
+	(*AppResponse)(nil),                // 17: rpclient.AppResponse
+	(*AppBroadcast)(nil),               // 18: rpclient.AppBroadcast
+	(*AppEmpty)(nil),                   // 19: rpclient.AppEmpty
+	(*AppSendMessage)(nil),             // 20: rpclient.AppSendMessage
+	(*AppSetEntityValue)(nil),          // 21: rpclient.AppSetEntityValue
+	(*AppPromoteToLeader)(nil),         // 22: rpclient.AppPromoteToLeader
+	(*AppGetNexusAuth)(nil),            // 23: rpclient.AppGetNexusAuth
+	(*AppSuccess)(nil),                 // 24: rpclient.AppSuccess
+	(*AppError)(nil),                   // 25: rpclient.AppError
+	(*AppFlag)(nil),                    // 26: rpclient.AppFlag
+	(*AppInfo)(nil),                    // 27: rpclient.AppInfo
+	(*AppTime)(nil),                    // 28: rpclient.AppTime
+	(*AppMap)(nil),                     // 29: rpclient.AppMap
+	(*AppEntityInfo)(nil),              // 30: rpclient.AppEntityInfo
+	(*AppEntityPayload)(nil),           // 31: rpclient.AppEntityPayload
+	(*AppTeamInfo)(nil),                // 32: rpclient.AppTeamInfo
+	(*AppTeamMessage)(nil),             // 33: rpclient.AppTeamMessage
+	(*AppTeamChat)(nil),                // 34: rpclient.AppTeamChat
+	(*AppMarker)(nil),                  // 35: rpclient.AppMarker
+	(*AppMapMarkers)(nil),              // 36: rpclient.AppMapMarkers
+	(*AppClanInfo)(nil),                // 37: rpclient.AppClanInfo
+	(*AppClanMessage)(nil),             // 38: rpclient.AppClanMessage
+	(*AppClanChat)(nil),                // 39: rpclient.AppClanChat
+	(*AppNexusAuth)(nil),               // 40: rpclient.AppNexusAuth
+	(*AppTeamChanged)(nil),             // 41: rpclient.AppTeamChanged
+	(*AppNewTeamMessage)(nil),          // 42: rpclient.AppNewTeamMessage
+	(*AppEntityChanged)(nil),           // 43: rpclient.AppEntityChanged
+	(*AppClanChanged)(nil),             // 44: rpclient.AppClanChanged
+	(*AppNewClanMessage)(nil),          // 45: rpclient.AppNewClanMessage
+	(*AppCameraSubscribe)(nil),         // 46: rpclient.AppCameraSubscribe
+	(*AppCameraInput)(nil),             // 47: rpclient.AppCameraInput
+	(*AppCameraInfo)(nil),              // 48: rpclient.AppCameraInfo
+	(*AppCameraRays)(nil),              // 49: rpclient.AppCameraRays
+	(*ClanInfo_Role)(nil),              // 50: rpclient.ClanInfo.Role
+	(*ClanInfo_Member)(nil),            // 51: rpclient.ClanInfo.Member
+	(*ClanInfo_Invite)(nil),            // 52: rpclient.ClanInfo.Invite
+	(*ClanLog_Entry)(nil),              // 53: rpclient.ClanLog.Entry
+	(*ClanInvitations_Invitation)(nil), // 54: rpclient.ClanInvitations.Invitation
+	(*AppMap_Monument)(nil),            // 55: rpclient.AppMap.Monument
+	(*AppEntityPayload_Item)(nil),      // 56: rpclient.AppEntityPayload.Item
+	(*AppTeamInfo_Member)(nil),         // 57: rpclient.AppTeamInfo.Member
+	(*AppTeamInfo_Note)(nil),           // 58: rpclient.AppTeamInfo.Note
+	(*AppMarker_SellOrder)(nil),        // 59: rpclient.AppMarker.SellOrder
+	(*AppCameraRays_Entity)(nil),       // 60: rpclient.AppCameraRays.Entity
 }
 var file_rustplus_proto_depIdxs = []int32{
-	4,  // 0: rustplus.Ray.origin:type_name -> rustplus.Vector3
-	4,  // 1: rustplus.Ray.direction:type_name -> rustplus.Vector3
-	10, // 2: rustplus.ClanActionResult.clanInfo:type_name -> rustplus.ClanInfo
-	48, // 3: rustplus.ClanInfo.roles:type_name -> rustplus.ClanInfo.Role
-	49, // 4: rustplus.ClanInfo.members:type_name -> rustplus.ClanInfo.Member
-	50, // 5: rustplus.ClanInfo.invites:type_name -> rustplus.ClanInfo.Invite
-	51, // 6: rustplus.ClanLog.logEntries:type_name -> rustplus.ClanLog.Entry
-	52, // 7: rustplus.ClanInvitations.invitations:type_name -> rustplus.ClanInvitations.Invitation
-	17, // 8: rustplus.AppRequest.getInfo:type_name -> rustplus.AppEmpty
-	17, // 9: rustplus.AppRequest.getTime:type_name -> rustplus.AppEmpty
-	17, // 10: rustplus.AppRequest.getMap:type_name -> rustplus.AppEmpty
-	17, // 11: rustplus.AppRequest.getTeamInfo:type_name -> rustplus.AppEmpty
-	17, // 12: rustplus.AppRequest.getTeamChat:type_name -> rustplus.AppEmpty
-	18, // 13: rustplus.AppRequest.sendTeamMessage:type_name -> rustplus.AppSendMessage
-	17, // 14: rustplus.AppRequest.getEntityInfo:type_name -> rustplus.AppEmpty
-	19, // 15: rustplus.AppRequest.setEntityValue:type_name -> rustplus.AppSetEntityValue
-	17, // 16: rustplus.AppRequest.checkSubscription:type_name -> rustplus.AppEmpty
-	24, // 17: rustplus.AppRequest.setSubscription:type_name -> rustplus.AppFlag
-	17, // 18: rustplus.AppRequest.getMapMarkers:type_name -> rustplus.AppEmpty
-	20, // 19: rustplus.AppRequest.promoteToLeader:type_name -> rustplus.AppPromoteToLeader
-	17, // 20: rustplus.AppRequest.getClanInfo:type_name -> rustplus.AppEmpty
-	18, // 21: rustplus.AppRequest.setClanMotd:type_name -> rustplus.AppSendMessage
-	17, // 22: rustplus.AppRequest.getClanChat:type_name -> rustplus.AppEmpty
-	18, // 23: rustplus.AppRequest.sendClanMessage:type_name -> rustplus.AppSendMessage
-	21, // 24: rustplus.AppRequest.getNexusAuth:type_name -> rustplus.AppGetNexusAuth
-	44, // 25: rustplus.AppRequest.cameraSubscribe:type_name -> rustplus.AppCameraSubscribe
-	17, // 26: rustplus.AppRequest.cameraUnsubscribe:type_name -> rustplus.AppEmpty
-	45, // 27: rustplus.AppRequest.cameraInput:type_name -> rustplus.AppCameraInput
-	15, // 28: rustplus.AppMessage.response:type_name -> rustplus.AppResponse
-	16, // 29: rustplus.AppMessage.broadcast:type_name -> rustplus.AppBroadcast
-	22, // 30: rustplus.AppResponse.success:type_name -> rustplus.AppSuccess
-	23, // 31: rustplus.AppResponse.error:type_name -> rustplus.AppError
-	25, // 32: rustplus.AppResponse.info:type_name -> rustplus.AppInfo
-	26, // 33: rustplus.AppResponse.time:type_name -> rustplus.AppTime
-	27, // 34: rustplus.AppResponse.map:type_name -> rustplus.AppMap
-	30, // 35: rustplus.AppResponse.teamInfo:type_name -> rustplus.AppTeamInfo
-	32, // 36: rustplus.AppResponse.teamChat:type_name -> rustplus.AppTeamChat
-	28, // 37: rustplus.AppResponse.entityInfo:type_name -> rustplus.AppEntityInfo
-	24, // 38: rustplus.AppResponse.flag:type_name -> rustplus.AppFlag
-	34, // 39: rustplus.AppResponse.mapMarkers:type_name -> rustplus.AppMapMarkers
-	35, // 40: rustplus.AppResponse.clanInfo:type_name -> rustplus.AppClanInfo
-	37, // 41: rustplus.AppResponse.clanChat:type_name -> rustplus.AppClanChat
-	38, // 42: rustplus.AppResponse.nexusAuth:type_name -> rustplus.AppNexusAuth
-	46, // 43: rustplus.AppResponse.cameraSubscribeInfo:type_name -> rustplus.AppCameraInfo
-	39, // 44: rustplus.AppBroadcast.teamChanged:type_name -> rustplus.AppTeamChanged
-	40, // 45: rustplus.AppBroadcast.teamMessage:type_name -> rustplus.AppNewTeamMessage
-	41, // 46: rustplus.AppBroadcast.entityChanged:type_name -> rustplus.AppEntityChanged
-	42, // 47: rustplus.AppBroadcast.clanChanged:type_name -> rustplus.AppClanChanged
-	43, // 48: rustplus.AppBroadcast.clanMessage:type_name -> rustplus.AppNewClanMessage
-	47, // 49: rustplus.AppBroadcast.cameraRays:type_name -> rustplus.AppCameraRays
-	53, // 50: rustplus.AppMap.monuments:type_name -> rustplus.AppMap.Monument
-	0,  // 51: rustplus.AppEntityInfo.type:type_name -> rustplus.AppEntityType
-	29, // 52: rustplus.AppEntityInfo.payload:type_name -> rustplus.AppEntityPayload
-	54, // 53: rustplus.AppEntityPayload.items:type_name -> rustplus.AppEntityPayload.Item
-	55, // 54: rustplus.AppTeamInfo.members:type_name -> rustplus.AppTeamInfo.Member
-	56, // 55: rustplus.AppTeamInfo.mapNotes:type_name -> rustplus.AppTeamInfo.Note
-	56, // 56: rustplus.AppTeamInfo.leaderMapNotes:type_name -> rustplus.AppTeamInfo.Note
-	31, // 57: rustplus.AppTeamChat.messages:type_name -> rustplus.AppTeamMessage
-	1,  // 58: rustplus.AppMarker.type:type_name -> rustplus.AppMarkerType
-	5,  // 59: rustplus.AppMarker.color1:type_name -> rustplus.Vector4
-	5,  // 60: rustplus.AppMarker.color2:type_name -> rustplus.Vector4
-	57, // 61: rustplus.AppMarker.sellOrders:type_name -> rustplus.AppMarker.SellOrder
-	33, // 62: rustplus.AppMapMarkers.markers:type_name -> rustplus.AppMarker
-	10, // 63: rustplus.AppClanInfo.clanInfo:type_name -> rustplus.ClanInfo
-	36, // 64: rustplus.AppClanChat.messages:type_name -> rustplus.AppClanMessage
-	30, // 65: rustplus.AppTeamChanged.teamInfo:type_name -> rustplus.AppTeamInfo
-	31, // 66: rustplus.AppNewTeamMessage.message:type_name -> rustplus.AppTeamMessage
-	29, // 67: rustplus.AppEntityChanged.payload:type_name -> rustplus.AppEntityPayload
-	10, // 68: rustplus.AppClanChanged.clanInfo:type_name -> rustplus.ClanInfo
-	36, // 69: rustplus.AppNewClanMessage.message:type_name -> rustplus.AppClanMessage
-	3,  // 70: rustplus.AppCameraInput.mouseDelta:type_name -> rustplus.Vector2
-	58, // 71: rustplus.AppCameraRays.entities:type_name -> rustplus.AppCameraRays.Entity
-	2,  // 72: rustplus.AppCameraRays.Entity.type:type_name -> rustplus.AppCameraRays.EntityType
-	4,  // 73: rustplus.AppCameraRays.Entity.position:type_name -> rustplus.Vector3
-	4,  // 74: rustplus.AppCameraRays.Entity.rotation:type_name -> rustplus.Vector3
-	4,  // 75: rustplus.AppCameraRays.Entity.size:type_name -> rustplus.Vector3
+	6,  // 0: rpclient.Ray.origin:type_name -> rpclient.Vector3
+	6,  // 1: rpclient.Ray.direction:type_name -> rpclient.Vector3
+	12, // 2: rpclient.ClanActionResult.clanInfo:type_name -> rpclient.ClanInfo
+	50, // 3: rpclient.ClanInfo.roles:type_name -> rpclient.ClanInfo.Role
+	51, // 4: rpclient.ClanInfo.members:type_name -> rpclient.ClanInfo.Member
+	52, // 5: rpclient.ClanInfo.invites:type_name -> rpclient.ClanInfo.Invite
+	53, // 6: rpclient.ClanLog.logEntries:type_name -> rpclient.ClanLog.Entry
+	54, // 7: rpclient.ClanInvitations.invitations:type_name -> rpclient.ClanInvitations.Invitation
+	19, // 8: rpclient.AppRequest.getInfo:type_name -> rpclient.AppEmpty
+	19, // 9: rpclient.AppRequest.getTime:type_name -> rpclient.AppEmpty
+	19, // 10: rpclient.AppRequest.getMap:type_name -> rpclient.AppEmpty
+	19, // 11: rpclient.AppRequest.getTeamInfo:type_name -> rpclient.AppEmpty
+	19, // 12: rpclient.AppRequest.getTeamChat:type_name -> rpclient.AppEmpty
+	20, // 13: rpclient.AppRequest.sendTeamMessage:type_name -> rpclient.AppSendMessage
+	19, // 14: rpclient.AppRequest.getEntityInfo:type_name -> rpclient.AppEmpty
+	21, // 15: rpclient.AppRequest.setEntityValue:type_name -> rpclient.AppSetEntityValue
+	19, // 16: rpclient.AppRequest.checkSubscription:type_name -> rpclient.AppEmpty
+	26, // 17: rpclient.AppRequest.setSubscription:type_name -> rpclient.AppFlag
+	19, // 18: rpclient.AppRequest.getMapMarkers:type_name -> rpclient.AppEmpty
+	22, // 19: rpclient.AppRequest.promoteToLeader:type_name -> rpclient.AppPromoteToLeader
+	19, // 20: rpclient.AppRequest.getClanInfo:type_name -> rpclient.AppEmpty
+	20, // 21: rpclient.AppRequest.setClanMotd:type_name -> rpclient.AppSendMessage
+	19, // 22: rpclient.AppRequest.getClanChat:type_name -> rpclient.AppEmpty
+	20, // 23: rpclient.AppRequest.sendClanMessage:type_name -> rpclient.AppSendMessage
+	23, // 24: rpclient.AppRequest.getNexusAuth:type_name -> rpclient.AppGetNexusAuth
+	46, // 25: rpclient.AppRequest.cameraSubscribe:type_name -> rpclient.AppCameraSubscribe
+	19, // 26: rpclient.AppRequest.cameraUnsubscribe:type_name -> rpclient.AppEmpty
+	47, // 27: rpclient.AppRequest.cameraInput:type_name -> rpclient.AppCameraInput
+	17, // 28: rpclient.AppMessage.response:type_name -> rpclient.AppResponse
+	18, // 29: rpclient.AppMessage.broadcast:type_name -> rpclient.AppBroadcast
+	24, // 30: rpclient.AppResponse.success:type_name -> rpclient.AppSuccess
+	25, // 31: rpclient.AppResponse.error:type_name -> rpclient.AppError
+	27, // 32: rpclient.AppResponse.info:type_name -> rpclient.AppInfo
+	28, // 33: rpclient.AppResponse.time:type_name -> rpclient.AppTime
+	29, // 34: rpclient.AppResponse.map:type_name -> rpclient.AppMap
+	32, // 35: rpclient.AppResponse.teamInfo:type_name -> rpclient.AppTeamInfo
+	34, // 36: rpclient.AppResponse.teamChat:type_name -> rpclient.AppTeamChat
+	30, // 37: rpclient.AppResponse.entityInfo:type_name -> rpclient.AppEntityInfo
+	26, // 38: rpclient.AppResponse.flag:type_name -> rpclient.AppFlag
+	36, // 39: rpclient.AppResponse.mapMarkers:type_name -> rpclient.AppMapMarkers
+	37, // 40: rpclient.AppResponse.clanInfo:type_name -> rpclient.AppClanInfo
+	39, // 41: rpclient.AppResponse.clanChat:type_name -> rpclient.AppClanChat
+	40, // 42: rpclient.AppResponse.nexusAuth:type_name -> rpclient.AppNexusAuth
+	48, // 43: rpclient.AppResponse.cameraSubscribeInfo:type_name -> rpclient.AppCameraInfo
+	41, // 44: rpclient.AppBroadcast.teamChanged:type_name -> rpclient.AppTeamChanged
+	42, // 45: rpclient.AppBroadcast.teamMessage:type_name -> rpclient.AppNewTeamMessage
+	43, // 46: rpclient.AppBroadcast.entityChanged:type_name -> rpclient.AppEntityChanged
+	44, // 47: rpclient.AppBroadcast.clanChanged:type_name -> rpclient.AppClanChanged
+	45, // 48: rpclient.AppBroadcast.clanMessage:type_name -> rpclient.AppNewClanMessage
+	49, // 49: rpclient.AppBroadcast.cameraRays:type_name -> rpclient.AppCameraRays
+	55, // 50: rpclient.AppMap.monuments:type_name -> rpclient.AppMap.Monument
+	0,  // 51: rpclient.AppEntityInfo.type:type_name -> rpclient.AppEntityType
+	31, // 52: rpclient.AppEntityInfo.payload:type_name -> rpclient.AppEntityPayload
+	56, // 53: rpclient.AppEntityPayload.items:type_name -> rpclient.AppEntityPayload.Item
+	57, // 54: rpclient.AppTeamInfo.members:type_name -> rpclient.AppTeamInfo.Member
+	33, // 55: rpclient.AppTeamChat.messages:type_name -> rpclient.AppTeamMessage
+	3,  // 56: rpclient.AppMarker.type:type_name -> rpclient.AppMarkerType
+	7,  // 57: rpclient.AppMarker.color1:type_name -> rpclient.Vector4
+	7,  // 58: rpclient.AppMarker.color2:type_name -> rpclient.Vector4
+	59, // 59: rpclient.AppMarker.sellOrders:type_name -> rpclient.AppMarker.SellOrder
+	35, // 60: rpclient.AppMapMarkers.markers:type_name -> rpclient.AppMarker
+	12, // 61: rpclient.AppClanInfo.clanInfo:type_name -> rpclient.ClanInfo
+	38, // 62: rpclient.AppClanChat.messages:type_name -> rpclient.AppClanMessage
+	32, // 63: rpclient.AppTeamChanged.teamInfo:type_name -> rpclient.AppTeamInfo
+	33, // 64: rpclient.AppNewTeamMessage.message:type_name -> rpclient.AppTeamMessage
+	31, // 65: rpclient.AppEntityChanged.payload:type_name -> rpclient.AppEntityPayload
+	12, // 66: rpclient.AppClanChanged.clanInfo:type_name -> rpclient.ClanInfo
+	38, // 67: rpclient.AppNewClanMessage.message:type_name -> rpclient.AppClanMessage
+	5,  // 68: rpclient.AppCameraInput.mouseDelta:type_name -> rpclient.Vector2
+	60, // 69: rpclient.AppCameraRays.entities:type_name -> rpclient.AppCameraRays.Entity
+	1,  // 70: rpclient.AppTeamInfo.Note.icon:type_name -> rpclient.IconType
+	2,  // 71: rpclient.AppTeamInfo.Note.colour:type_name -> rpclient.IconColor
+	4,  // 72: rpclient.AppCameraRays.Entity.type:type_name -> rpclient.AppCameraRays.EntityType
+	6,  // 73: rpclient.AppCameraRays.Entity.position:type_name -> rpclient.Vector3
+	6,  // 74: rpclient.AppCameraRays.Entity.rotation:type_name -> rpclient.Vector3
+	6,  // 75: rpclient.AppCameraRays.Entity.size:type_name -> rpclient.Vector3
 	76, // [76:76] is the sub-list for method output_type
 	76, // [76:76] is the sub-list for method input_type
 	76, // [76:76] is the sub-list for extension type_name
@@ -4665,7 +4855,7 @@ func file_rustplus_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_rustplus_proto_rawDesc), len(file_rustplus_proto_rawDesc)),
-			NumEnums:      3,
+			NumEnums:      5,
 			NumMessages:   56,
 			NumExtensions: 0,
 			NumServices:   0,
