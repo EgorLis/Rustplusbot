@@ -35,6 +35,10 @@ type RustPlusBot struct {
 	reinitMu   sync.Mutex
 	lastReinit time.Time
 
+	// Alarm mute (не воспроизводить звуки, если это не нужно)
+	amMu      sync.Mutex
+	amIsMuted bool
+
 	// death-watch
 	dwMu      sync.Mutex
 	dwRunning bool
@@ -102,7 +106,7 @@ func (bot *RustPlusBot) SetRustPlusClient(cfg rpclient.RustPlusConfig) {
 			if p := ec.GetPayload(); p != nil && p.Value != nil && p.GetValue() {
 				text := fmt.Sprintf("[ALARM TRIGGERED] %s (%d): %s", alarm.name, id, alarm.msg)
 				bot.rpc.BotSay(text)
-				if alarm.callback != nil {
+				if alarm.callback != nil && !bot.amIsMuted {
 					go alarm.callback()
 				}
 			}

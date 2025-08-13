@@ -34,7 +34,7 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 		}, "\n"))
 		say(strings.Join([]string{
 			"!alarm del <id>",
-			"!alarm list",
+			"!alarm list|mute|unmute",
 			"!track add <steamid> [name]",
 			"!track del <steamid>",
 			"!track list|info",
@@ -142,6 +142,24 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 			}
 			say("alarms:\n" + strings.Join(rows, "\n"))
 			return nil
+		case "mute":
+			bot.amMu.Lock()
+			defer bot.amMu.Unlock()
+			if bot.amIsMuted {
+				return fmt.Errorf("alarms already muted")
+			}
+			bot.amIsMuted = true
+			say("alarms muted")
+			return nil
+		case "unmute":
+			bot.amMu.Lock()
+			defer bot.amMu.Unlock()
+			if !bot.amIsMuted {
+				return fmt.Errorf("alarms not muted")
+			}
+			bot.amIsMuted = false
+			say("alarms unmuted")
+			return nil
 
 		case "add":
 			if len(fields) < 4 {
@@ -187,7 +205,7 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 			return nil
 
 		default:
-			return fmt.Errorf("usage: !alarm add|del|list")
+			return fmt.Errorf("usage: !alarm add|del|list|mute|unmute")
 		}
 
 	// ---------- TRACK (BattleMetrics) ----------
