@@ -1,0 +1,7 @@
+{
+  "server": "127.0.0.1",
+  "port": 28111,
+  "player_id": 7111111111111111,
+  "player_token": 111111111,
+  "use_proxy": false
+}

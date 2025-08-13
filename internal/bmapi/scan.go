@@ -1,5 +1,3 @@
-//Пакет для взаимодействия с API Battle Metrics
-
 package bmapi
 
 import (
@@ -9,104 +7,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 )
-
-type BMResponse struct {
-	Data struct {
-		ID            string `json:"id"`
-		Relationships struct {
-			Players struct {
-				Data []struct {
-					Type string `json:"type"`
-					ID   string `json:"id"`
-				} `json:"data"`
-			} `json:"players"`
-		} `json:"relationships"`
-	} `json:"data"`
-	Included []struct {
-		Type       string `json:"type"` // "player"
-		ID         string `json:"id"`
-		Attributes struct {
-			Name string `json:"name"`
-		} `json:"attributes"`
-	} `json:"included"`
-}
-
-type BMConf struct {
-	Server string `json:"server"`
-	Token  string `json:"token"`
-}
-
-type Player struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-type Client struct {
-	http   *http.Client
-	token  string
-	server string
-
-	mu              sync.RWMutex
-	playersToDetect map[string]string // кого отслеживаем (id->name, name может быть пустым)
-	lastPlayersScan map[string]string // последний снимок (только отслеживаемые)
-	running         bool
-	stopCh          chan struct{}
-
-	etag string // для If-None-Match
-}
-
-func NewClient(token, server string, players ...Player) *Client {
-	watch := make(map[string]string, len(players))
-	for _, p := range players {
-		watch[p.ID] = p.Name
-	}
-	return &Client{
-		http:            &http.Client{Timeout: 10 * time.Second},
-		token:           token,
-		server:          server,
-		playersToDetect: watch,
-		lastPlayersScan: map[string]string{},
-	}
-}
-
-func NewClientFromConf(conf BMConf) *Client {
-	watch := make(map[string]string)
-
-	return &Client{
-		http:            &http.Client{Timeout: 10 * time.Second},
-		token:           conf.Token,
-		server:          conf.Server,
-		playersToDetect: watch,
-		lastPlayersScan: map[string]string{},
-	}
-}
-
-func (c *Client) AddPlayer(players ...Player) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	for _, p := range players {
-		c.playersToDetect[p.ID] = p.Name
-	}
-}
-
-func (c *Client) RemovePlayer(playerId string) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	delete(c.playersToDetect, playerId)
-}
-
-func (c *Client) Players() map[string]string {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	cp := make(map[string]string, len(c.lastPlayersScan))
-	for k, v := range c.lastPlayersScan {
-		cp[k] = v
-	}
-	return cp
-}
 
 // StartScan запускает фоновый опрос и уведомления.
 // notify вызывается строкой-сообщением (сделай там отправку в чат Rust+).
@@ -276,6 +178,8 @@ func (c *Client) fetchPlayers() (map[string]string, error) {
 			log.Printf("[online]-> id %s: name %s", inc.ID, inc.Attributes.Name)
 		}
 	}
+
+	log.Println("[online] ======================================")
 
 	// фильтруем только отслеживаемых
 	c.mu.RLock()

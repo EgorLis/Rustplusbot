@@ -1,0 +1,17 @@
+{
+  "bt1": {
+    "id": 111111,
+    "name": "SAM"
+  },
+  "bt2": {
+    "id": 111112,
+    "name": "TURRETS"
+  },
+  "alarms": {},
+  "players": [
+    {
+      "id": "111111", 
+      "name": "me"
+    }
+  ]
+}

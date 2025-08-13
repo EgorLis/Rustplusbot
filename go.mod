@@ -1,4 +1,4 @@
-module example.com/volhook
+module github.com/EgorLis/Rustplusbot
 
 go 1.24.5
 

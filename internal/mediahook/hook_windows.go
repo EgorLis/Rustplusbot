@@ -2,7 +2,7 @@ package mediahook
 
 import (
 	"errors"
-	"fmt"
+	"log"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -95,14 +95,14 @@ func WithMute(cb func()) func(*Hook) {
 // Start устанавливает глобальный low-level hook и запускает цикл сообщений в горутине.
 func (h *Hook) Start() error {
 	if h.started.Swap(true) {
-		return errors.New("mediahook: already started")
+		return errors.New("[mediahook] already started")
 	}
 
 	curMu.Lock()
 	if current != nil {
 		curMu.Unlock()
 		h.started.Store(false)
-		return errors.New("mediahook: another hook is already installed")
+		return errors.New("[mediahook] another hook is already installed")
 	}
 	current = h
 	curMu.Unlock()
@@ -152,12 +152,12 @@ func (h *Hook) run() {
 		0,
 	)
 	if ret == 0 {
-		fmt.Println("SetWindowsHookExW failed:", err)
+		log.Println("[mediahook] SetWindowsHookExW failed:", err)
 		h.Close()
 		return
 	}
 	h.hHook = ret
-	//fmt.Println("mediahook: installed")
+	log.Println("[mediahook] installed")
 
 	// Цикл сообщений — чтобы хук получал события
 	var m msg
@@ -168,7 +168,7 @@ func (h *Hook) run() {
 		}
 	}
 
-	//fmt.Println("mediahook: loop exit")
+	log.Println("[mediahook] loop exit")
 }
 
 // llKeyboardProc — callback для WH_KEYBOARD_LL.

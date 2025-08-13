@@ -1,7 +1,7 @@
 syntax = "proto2";
 package rpclient;
 
-option go_package = "example.com/rustplusbot/pkg/rpclient;rpclient";
+option go_package = "github.com/EgorLis/Rustplusbot/internal/rpclient;rpclient";
 
 message Vector2 {
 	optional float x = 1;
