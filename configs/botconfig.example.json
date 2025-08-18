@@ -1,17 +1,24 @@
 {
   "bt1": {
-    "id": 111111,
-    "name": "SAM"
+    "id": 123456,
+    "name": "Полив"
   },
   "bt2": {
-    "id": 111112,
-    "name": "TURRETS"
+    "id": 1234567,
+    "name": "Турели"
   },
-  "alarms": {},
+  "alarms": {
+    "223456": {
+      "id": 223456,
+      "name": "alarm",
+      "msg": "\"alarm_alarm\"",
+      "sound": "\"1.mp3\""
+    }
+  },
   "players": [
     {
-      "id": "111111", 
-      "name": "me"
+      "id": "1111111",
+      "name": "Enemy"
     }
   ]
 }
