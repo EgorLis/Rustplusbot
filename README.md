@@ -123,7 +123,7 @@ The bot maintains this config automatically: when you add/remove switches/alarms
 { "id": "1158097317", "name": "ToxicDude" }
 ]
 }
-``
+```
 When starting, the bot applies the contents of `botconfig.json` (if enabled).
 
 How to find device IDs (Switch/Alarm) in the game
