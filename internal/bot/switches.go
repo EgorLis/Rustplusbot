@@ -1,11 +1,12 @@
 package bot
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"sync"
 
-	"github.com/EgorLis/Rustplusbot/internal/rpclient"
+	"github.com/EgorLis/Rustplusbot/internal/rustplus"
 )
 
 type smartSwitch struct {
@@ -15,12 +16,12 @@ type smartSwitch struct {
 	state bool
 }
 
-func (bot *RustPlusBot) initSwitch(sw *smartSwitch) {
+func (bot *RustPlusBot) initSwitch(ctx context.Context, sw *smartSwitch) {
 	if sw == nil {
 		return
 	}
 	id := sw.id
-	_ = bot.rpc.GetEntityInfo(id, func(m *rpclient.AppMessage) bool {
+	_ = bot.rpc.GetEntityInfo(ctx, id, func(m *rustplus.AppMessage) bool {
 		if info := m.GetResponse().GetEntityInfo(); info != nil {
 			val := false
 			if p := info.GetPayload(); p != nil && p.Value != nil {
@@ -35,7 +36,7 @@ func (bot *RustPlusBot) initSwitch(sw *smartSwitch) {
 	})
 }
 
-func (bot *RustPlusBot) turnSwitch(number int) string {
+func (bot *RustPlusBot) turnSwitch(ctx context.Context, number int) string {
 	var sw *smartSwitch
 	switch number {
 	case 1:
@@ -53,14 +54,14 @@ func (bot *RustPlusBot) turnSwitch(number int) string {
 	defer sw.Unlock()
 
 	if sw.state {
-		err := bot.rpc.TurnSmartSwitchOff(sw.id, nil)
+		err := bot.rpc.TurnSmartSwitchOff(ctx, sw.id, nil)
 		if err != nil {
 			return fmt.Sprintf("%s: %s", sw.name, err)
 		}
 		sw.state = false
 		return fmt.Sprintf("%s : off", sw.name)
 	}
-	err := bot.rpc.TurnSmartSwitchOn(sw.id, nil)
+	err := bot.rpc.TurnSmartSwitchOn(ctx, sw.id, nil)
 	if err != nil {
 		return fmt.Sprintf("%s: %s", sw.name, err)
 	}

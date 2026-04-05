@@ -5,19 +5,27 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/EgorLis/Rustplusbot/internal/bluetooth"
 	"github.com/EgorLis/Rustplusbot/internal/bmapi"
-	"github.com/EgorLis/Rustplusbot/internal/mediahook"
-	"github.com/EgorLis/Rustplusbot/internal/rpclient"
+	"github.com/EgorLis/Rustplusbot/internal/rustplus"
+	"github.com/EgorLis/Rustplusbot/internal/tools"
+)
+
+var logger = log.New(os.Stdout, "[bot] ", log.LstdFlags)
+
+const (
+	requestTimeout = 5 * time.Second
 )
 
 type RustPlusBot struct {
 	bm        *bmapi.Client
-	rpc       *rpclient.RustPlus
-	mediaHook *mediahook.Hook
+	rpc       *rustplus.Client
+	bluetooth *bluetooth.BluetoothHandler
 
 	alarms    map[uint32]smartAlarm
 	bt1switch *smartSwitch
@@ -27,9 +35,11 @@ type RustPlusBot struct {
 
 	cfg *configStore
 
-	stopCh chan struct{}
-	wg     sync.WaitGroup
-	mu     sync.Mutex
+	globalCtx    context.Context
+	globalCancel context.CancelFunc
+	stopCh       chan struct{}
+	wg           sync.WaitGroup
+	mu           sync.Mutex
 
 	// чтобы не дёргать re-init слишком часто при серии быстрых реконнектов
 	reinitMu   sync.Mutex
@@ -44,12 +54,24 @@ type RustPlusBot struct {
 	dwRunning bool
 	dwCancel  context.CancelFunc
 	dwEvery   time.Duration
+
+	circularBufferLogs *tools.CircularBuffer
 }
 
 func New() *RustPlusBot {
+	globaclCtx, globalCancel := context.WithCancel(context.Background())
+
 	return &RustPlusBot{
-		alarms: make(map[uint32]smartAlarm),
+		alarms:       make(map[uint32]smartAlarm),
+		globalCtx:    globaclCtx,
+		globalCancel: globalCancel,
 	}
+}
+
+func (bot *RustPlusBot) UseCircularBufferLogs(bufferSize int) {
+	bot.circularBufferLogs = tools.NewCircularBuffer(bufferSize)
+
+	logger = log.New(bot.circularBufferLogs, "[bot] ", log.LstdFlags)
 }
 
 func (bot *RustPlusBot) SetCheckPlayerDeath(steamID uint64, sound *string) {
@@ -60,20 +82,19 @@ func (bot *RustPlusBot) SetCheckPlayerDeath(steamID uint64, sound *string) {
 	}
 }
 
-func (bot *RustPlusBot) SetRustPlusClient(cfg rpclient.RustPlusConfig) {
-	bot.rpc = rpclient.New(cfg.Server, cfg.Port, cfg.PlayerID, cfg.PlayerToken, cfg.UseProxy)
-
-	bot.rpc.OnConnecting = func() { fmt.Println("connecting...") }
+func (bot *RustPlusBot) SetRustPlusClient(cfg rustplus.Config) {
+	onConnecting := func() { logger.Println("connecting...") }
 
 	// КЛЮЧЕВОЕ: любое успешное подключение (первое или реконнект) — делаем re-init
-	bot.rpc.OnConnected = func() {
-		fmt.Println("connected")
-		go bot.reinitDevices()
+	onConnected := func() {
+		logger.Println("connected")
+		ctx, _ := bot.getCtx()
+		go bot.reinitDevices(ctx)
 	}
 
-	bot.rpc.OnError = func(err error) { fmt.Println("err:", err) }
+	onError := func(err error) { logger.Println("err:", err) }
 
-	bot.rpc.OnMessage = func(msg *rpclient.AppMessage) {
+	onMessage := func(msg *rustplus.AppMessage) {
 		b := msg.GetBroadcast()
 		if b == nil {
 			return
@@ -87,10 +108,11 @@ func (bot *RustPlusBot) SetRustPlusClient(cfg rpclient.RustPlusConfig) {
 				return
 			}
 			playerName := message.GetName()
-			log.Printf("[%s] %s", playerName, text)
+			logger.Printf("[%s] %s", playerName, text)
 			if strings.HasPrefix(text, "!") {
 				if err := bot.HandleCommand(text); err != nil {
-					bot.rpc.BotSay(fmt.Sprintf("err: %v", err))
+					ctx, _ := bot.getCtx()
+					bot.rpc.BotSay(ctx, fmt.Sprintf("err: %v", err))
 				}
 				return
 			}
@@ -105,32 +127,39 @@ func (bot *RustPlusBot) SetRustPlusClient(cfg rpclient.RustPlusConfig) {
 			}
 			if p := ec.GetPayload(); p != nil && p.Value != nil && p.GetValue() {
 				text := fmt.Sprintf("[ALARM TRIGGERED] %s (%d): %s", alarm.name, id, alarm.msg)
-				bot.rpc.BotSay(text)
+				ctx, _ := bot.getCtx()
+				bot.rpc.BotSay(ctx, text)
 				if alarm.callback != nil && !bot.amIsMuted {
 					go alarm.callback()
 				}
 			}
 		}
 	}
+
+	bot.rpc = rustplus.NewClient(&cfg, rustplus.Events{
+		OnConnecting: onConnecting,
+		OnConnected:  onConnected,
+		OnError:      onError,
+		OnMessage:    onMessage,
+	})
 }
 
 func (bot *RustPlusBot) SetMediaHook() {
-	h, err := mediahook.New(
+	h := bluetooth.NewBluetoothHandler()
+	h.SetCallbacks(func() {
+		ctx, _ := bot.getCtx()
+		logger.Println("UP pressed")
+		msg := bot.turnSwitch(ctx, 1)
+		bot.rpc.BotSay(ctx, msg)
+	},
 		func() {
-			log.Println("UP pressed")
-			msg := bot.turnSwitch(1)
-			bot.rpc.BotSay(msg)
-		},
-		func() {
-			log.Println("DOWN pressed")
-			msg := bot.turnSwitch(2)
-			bot.rpc.BotSay(msg)
-		},
-	)
-	if err != nil {
-		panic(err)
-	}
-	bot.mediaHook = h
+			ctx, _ := bot.getCtx()
+			logger.Println("DOWN pressed")
+			msg := bot.turnSwitch(ctx, 2)
+			bot.rpc.BotSay(ctx, msg)
+		})
+
+	bot.bluetooth = h
 }
 
 func (bot *RustPlusBot) SetBattleMetrics(cfg bmapi.BMConf) {
@@ -154,14 +183,17 @@ func (bot *RustPlusBot) SetSwitch(number int, switchId uint32, switchName string
 
 func (bot *RustPlusBot) SetAlarm(alarmId uint32, alarmName, alarmMsg string, triggerFunc func()) {
 	bot.alarms[alarmId] = smartAlarm{name: alarmName, msg: alarmMsg, callback: triggerFunc}
-	bot.initAlarmByID(alarmId)
+	ctx, _ := bot.getCtx()
+	bot.initAlarmByID(ctx, alarmId)
 }
 
 func (bot *RustPlusBot) Start() error {
 	if bot == nil {
 		return errors.New("бот не инициализирован")
 	}
+
 	if bot.rpc == nil {
+
 		return errors.New("модуль rpc не инициализирован")
 	}
 	if bot.stopCh != nil {
@@ -169,39 +201,60 @@ func (bot *RustPlusBot) Start() error {
 	}
 	bot.stopCh = make(chan struct{})
 
-	ctx, cancel := context.WithCancel(context.Background())
-	if err := bot.rpc.Connect(ctx); err != nil {
-		cancel()
-		return err
+	bot.rpc.Run()
+	if bot.circularBufferLogs != nil {
+		bot.rpc.UseCircularBufferLogs(bot.circularBufferLogs)
 	}
 
 	if bot.bm != nil {
+		if bot.circularBufferLogs != nil {
+			bot.bm.UseCircularBufferLogs(bot.circularBufferLogs)
+		}
 		notify := func(text string) {
-			_ = bot.rpc.BotSay(text)
+			ctx, _ := bot.getCtx()
+			_ = bot.rpc.BotSay(ctx, text)
 		}
 		_ = bot.bm.StartScan(1*time.Minute, notify)
 	}
 
-	if bot.mediaHook != nil {
-		if err := bot.mediaHook.Start(); err != nil {
-			log.Println("mediahook:", err)
+	if bot.bluetooth != nil {
+		if bot.circularBufferLogs != nil {
+			bot.bluetooth.UseCircularBufferLogs(bot.circularBufferLogs)
+		}
+		if err := bot.bluetooth.Start(); err != nil {
+			logger.Println("mediahook:", err)
 		}
 	}
 
 	// сторож для остановки
-	bot.wg.Add(1)
-	go func() {
-		defer bot.wg.Done()
+	bot.wg.Go(func() {
 		<-bot.stopCh
-		if bot.mediaHook != nil {
-			bot.mediaHook.Close()
+
+		bot.globalCancel() // отменяем все контексты
+
+		logger.Println("Stop command was received, canceling global ctx, wait 5 sec")
+
+		<-time.After(requestTimeout) // даём goroutines чуть времени на завершение после отмены контекста
+
+		logger.Println("Stopping bot...")
+
+		if bot.bluetooth != nil {
+			err := bot.bluetooth.Stop()
+			if err != nil {
+				logger.Println("Error while stoppint bluetooth handler: ", err)
+			}
 		}
 		if bot.bm != nil {
 			bot.bm.Stop()
 		}
-		cancel()
-		bot.rpc.Disconnect()
-	}()
+
+		if bot.rpc != nil {
+			bot.rpc.Stop()
+		}
+
+		logger.Println("Bot stopped")
+
+	})
 
 	return nil
 }
@@ -219,7 +272,7 @@ func (bot *RustPlusBot) Stop() {
 }
 
 // re-init всех девайсов при (ре)подключении
-func (bot *RustPlusBot) reinitDevices() {
+func (bot *RustPlusBot) reinitDevices(ctx context.Context) {
 	// антидребезг: если OnConnected прилетело несколько раз подряд — коллапсируем в 1 вызов
 	bot.reinitMu.Lock()
 	if time.Since(bot.lastReinit) < 2*time.Second {
@@ -230,11 +283,27 @@ func (bot *RustPlusBot) reinitDevices() {
 	bot.reinitMu.Unlock()
 
 	// синхронизируем свитчи: читаем текущее значение и обновляем state (НЕ переключаем)
-	bot.initSwitch(bot.bt1switch)
-	bot.initSwitch(bot.bt2switch)
+	bot.initSwitch(ctx, bot.bt1switch)
+	bot.initSwitch(ctx, bot.bt2switch)
 
 	// просто лог/проверка для алармов
 	for id := range bot.alarms {
-		bot.initAlarmByID(id)
+		bot.initAlarmByID(ctx, id)
 	}
+}
+
+func (bot *RustPlusBot) getCtx() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(bot.globalCtx, requestTimeout)
+}
+
+func (bot *RustPlusBot) GetRPC() *rustplus.Client {
+	return bot.rpc
+}
+
+func (bot *RustPlusBot) GetBM() *bmapi.Client {
+	return bot.bm
+}
+
+func (bot *RustPlusBot) GetCircularBuffer() *tools.CircularBuffer {
+	return bot.circularBufferLogs
 }

@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/EgorLis/Rustplusbot/internal/bmapi"
+	"github.com/EgorLis/Rustplusbot/internal/rustplus"
+	"github.com/EgorLis/Rustplusbot/internal/tools"
 )
 
 // сплит с поддержкой кавычек: msg="дом рейдят"
@@ -20,7 +22,13 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 	}
 	cmd := strings.ToLower(fields[0])
 
-	say := func(s string) { _ = bot.rpc.BotSay(s) }
+	say := func(s string) {
+		ctx, _ := bot.getCtx()
+		err := bot.rpc.BotSay(ctx, s)
+		if err != nil {
+			logger.Println("error to say: ", err)
+		}
+	}
 
 	switch cmd {
 
@@ -46,6 +54,7 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 			"!death status",
 			"!save",
 		}, "\n"))
+		say("!time")
 		return nil
 
 	// ---------- BT ----------
@@ -320,7 +329,8 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 				sound = &s // может быть "none" или имя файла
 			}
 			bot.SetCheckPlayerDeath(steamID, sound)
-			_ = bot.rpc.BotSay(fmt.Sprintf("death-watch target set: %d", steamID))
+			ctx, _ := bot.getCtx()
+			_ = bot.rpc.BotSay(ctx, fmt.Sprintf("death-watch target set: %d", steamID))
 			return nil
 
 		case "start":
@@ -334,12 +344,14 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 			if err := bot.StartDeathWatch(time.Duration(sec) * time.Second); err != nil {
 				return err
 			}
-			_ = bot.rpc.BotSay(fmt.Sprintf("death-watch started (%ds)", sec))
+			ctx, _ := bot.getCtx()
+			_ = bot.rpc.BotSay(ctx, fmt.Sprintf("death-watch started (%ds)", sec))
 			return nil
 
 		case "stop":
 			bot.StopDeathWatch()
-			_ = bot.rpc.BotSay("death-watch stopped")
+			ctx, _ := bot.getCtx()
+			_ = bot.rpc.BotSay(ctx, "death-watch stopped")
 			return nil
 
 		case "status":
@@ -348,9 +360,11 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 			ev := bot.dwEvery
 			bot.dwMu.Unlock()
 			if running {
-				_ = bot.rpc.BotSay(fmt.Sprintf("death-watch: running (every %s)", ev))
+				ctx, _ := bot.getCtx()
+				_ = bot.rpc.BotSay(ctx, fmt.Sprintf("death-watch: running (every %s)", ev))
 			} else {
-				_ = bot.rpc.BotSay("death-watch: stopped")
+				ctx, _ := bot.getCtx()
+				_ = bot.rpc.BotSay(ctx, "death-watch: stopped")
 			}
 			return nil
 
@@ -369,9 +383,22 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 		}
 		return fmt.Errorf("config not enabled")
 
+	case "!time":
+		ctx, _ := bot.getCtx()
+		bot.rpc.GetTime(ctx, func(m *rustplus.AppMessage) bool {
+			if resp := m.GetResponse().GetTime(); resp != nil {
+				say(fmt.Sprintf("server time: %s", tools.FormatGameTime(resp.GetTime())))
+				return true
+			}
+
+			return false
+		})
+
+		return nil
 	default:
 		return fmt.Errorf("unknown command. try !help")
 	}
+
 }
 
 func parseUint32(s string) (uint32, error) {

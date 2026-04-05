@@ -1,7 +1,7 @@
 syntax = "proto2";
-package rpclient;
+package rustplus;
 
-option go_package = "github.com/EgorLis/Rustplusbot/internal/rpclient;rpclient";
+option go_package = "github.com/EgorLis/Rustplusbot/internal/rustplus;rustplus";
 
 message Vector2 {
 	optional float x = 1;
@@ -211,15 +211,15 @@ message AppFlag {
 }
 
 message AppInfo {
-	required string name = 1;
-	required string headerImage = 2;
-	required string url = 3;
-	required string map = 4;
-	required uint32 mapSize = 5;
-	required uint32 wipeTime = 6;
-	required uint32 players = 7;
-	required uint32 maxPlayers = 8;
-	required uint32 queuedPlayers = 9;
+	optional string name = 1;
+	optional string headerImage = 2;
+	optional string url = 3;
+	optional string map = 4;
+	optional uint32 mapSize = 5;
+	optional uint32 wipeTime = 6;
+	optional uint32 players = 7;
+	optional uint32 maxPlayers = 8;
+	optional uint32 queuedPlayers = 9;
 	optional uint32 seed = 10;
 	optional uint32 salt = 11;
 	optional string logoImage = 12;
@@ -344,16 +344,16 @@ message AppMarker {
 	optional float alpha = 10;
 	optional string name = 11;
 	optional bool outOfStock = 12;
-	repeated AppMarker.SellOrder sellOrders = 13;
+	optional AppMarker.SellOrder sellOrders = 13;
 
 	message SellOrder {
-		required int32 itemId = 1;
-		required int32 quantity = 2;
-		required int32 currencyId = 3;
-		required int32 costPerItem = 4;
-		required int32 amountInStock = 5;
-		required bool itemIsBlueprint = 6;
-		required bool currencyIsBlueprint = 7;
+		optional int32 itemId = 1;
+		optional int32 quantity = 2;
+		optional int32 currencyId = 3;
+		optional int32 costPerItem = 4;
+		optional int32 amountInStock = 5;
+		optional bool itemIsBlueprint = 6;
+		optional bool currencyIsBlueprint = 7;
 		optional float itemCondition = 8;
 		optional float itemConditionMax = 9;
 	}

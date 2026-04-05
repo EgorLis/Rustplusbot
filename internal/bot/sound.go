@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"log"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -34,7 +33,7 @@ func (bot *RustPlusBot) callbackForSound(sound string) func() {
 
 	return func() {
 		if err := PlaySoundFile(path); err != nil {
-			log.Println("sound open error:", err)
+			logger.Println("sound open error:", err)
 		}
 	}
 }

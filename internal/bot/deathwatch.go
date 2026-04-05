@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/EgorLis/Rustplusbot/internal/rpclient"
+	"github.com/EgorLis/Rustplusbot/internal/rustplus"
 )
 
 type playerDeath struct {
@@ -55,7 +55,7 @@ func (bot *RustPlusBot) StopDeathWatch() {
 	}
 }
 
-func (bot *RustPlusBot) checkDeath(ti *rpclient.AppTeamInfo, say func(string)) {
+func (bot *RustPlusBot) checkDeath(ti *rustplus.AppTeamInfo, say func(string)) {
 
 	log.Println("[death] check death...")
 
@@ -65,7 +65,7 @@ func (bot *RustPlusBot) checkDeath(ti *rpclient.AppTeamInfo, say func(string)) {
 	}
 
 	// найти себя
-	var me *rpclient.AppTeamInfo_Member
+	var me *rustplus.AppTeamInfo_Member
 	for _, m := range ti.GetMembers() {
 		if m.GetSteamId() == pd.steamID {
 			me = m
@@ -129,10 +129,6 @@ func (bot *RustPlusBot) deathPollLoop(ctx context.Context) {
 	t := time.NewTicker(bot.dwEvery)
 	defer t.Stop()
 
-	// чтобы не спамить в разрыв соединения
-	var notConnectedBackoff = time.Second
-	const maxBackoff = 10 * time.Second
-
 	// чтобы избежать ложного триггера на первом чтении
 	initOnce := true
 
@@ -142,43 +138,24 @@ func (bot *RustPlusBot) deathPollLoop(ctx context.Context) {
 			return
 
 		case <-t.C:
-			// 1) нет соединения? просто «спим» и ждём следующего тика,
-			//    можно добавить небольшой прогрессивный backoff чтобы не дёргать CPU
-			if !bot.rpc.IsConnected() {
-				time.Sleep(notConnectedBackoff)
-				if notConnectedBackoff < maxBackoff {
-					notConnectedBackoff *= 2
-					if notConnectedBackoff > maxBackoff {
-						notConnectedBackoff = maxBackoff
-					}
+			bot.rpc.GetTeamInfo(ctx, func(msg *rustplus.AppMessage) bool {
+				ti := msg.Response.GetTeamInfo()
+				if ti == nil {
+					return false
 				}
-				continue
-			}
-			// есть соединение — сбросим backoff
-			notConnectedBackoff = time.Second
 
-			// 2) безопасно дергаем TeamInfo с таймаутом; при реконнекте будет ошибка — не страшно
-			resp, err := bot.rpc.SendRequestAsync(&rpclient.AppRequest{
-				GetTeamInfo: &rpclient.AppEmpty{},
-			}, 8*time.Second)
-			if err != nil || resp == nil {
-				// сеть/таймаут — молча ждём следующий тик
-				continue
-			}
-			ti := resp.GetTeamInfo()
-			if ti == nil {
-				continue
-			}
+				// 3) первый проход — только зафиксировать состояние
+				if initOnce {
+					bot.checkDeath(ti, func(string) {})
+					initOnce = false
+					return true
+				}
 
-			// 3) первый проход — только зафиксировать состояние
-			if initOnce {
-				bot.checkDeath(ti, func(string) {})
-				initOnce = false
-				continue
-			}
+				// 4) обычная обработка: сравнить снапшоты и, если надо, сообщить
+				bot.checkDeath(ti, func(msg string) { _ = bot.rpc.BotSay(ctx, msg) })
 
-			// 4) обычная обработка: сравнить снапшоты и, если надо, сообщить
-			bot.checkDeath(ti, func(msg string) { _ = bot.rpc.BotSay(msg) })
+				return true
+			})
 		}
 	}
 }

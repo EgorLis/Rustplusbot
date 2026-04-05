@@ -1,16 +1,13 @@
 package main
 
 import (
-	"context"
 	"log"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/EgorLis/Rustplusbot/internal/bmapi"
 	"github.com/EgorLis/Rustplusbot/internal/bot"
 	"github.com/EgorLis/Rustplusbot/internal/rustplus"
 	"github.com/EgorLis/Rustplusbot/internal/tools"
+	"github.com/EgorLis/Rustplusbot/internal/tui"
 )
 
 func main() {
@@ -22,10 +19,10 @@ func main() {
 
 	// воспроизведение звука при смерти персонажа
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
 	b := bot.New()
+
+	b.UseCircularBufferLogs(1000)
+
 	b.SetRustPlusClient(rpcfg)
 	b.SetBattleMetrics(bmcfg)
 	b.SetMediaHook()
@@ -43,8 +40,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Println("running… press Ctrl+C to stop")
+	// log.Println("running… press Ctrl+C to stop")
 
-	<-ctx.Done()
+	log.Fatal(tui.NewApp(b).Run())
+
 	b.Stop()
 }

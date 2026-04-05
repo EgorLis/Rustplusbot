@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"maps"
 	"net/http"
 	"strings"
 	"time"
@@ -39,7 +39,7 @@ func (c *Client) StartScan(interval time.Duration, notify func(string)) error {
 				cur, err := c.fetchPlayers()
 				if err != nil {
 					//notify(fmt.Sprintf("BM error: %v", err))
-					log.Println(err)
+					logger.Println(err)
 					continue
 				}
 				c.mu.Lock()
@@ -147,7 +147,7 @@ func (c *Client) fetchPlayers() (map[string]string, error) {
 			prev[k] = v
 		}
 		c.mu.RUnlock()
-		log.Println("304 — ничего не изменилось")
+		logger.Println("304 — ничего не изменилось")
 		return prev, nil
 	}
 	if resp.StatusCode/100 != 2 {
@@ -169,24 +169,22 @@ func (c *Client) fetchPlayers() (map[string]string, error) {
 	names := map[string]string{}
 
 	if len(br.Included) == 0 {
-		log.Println("[online]-> сервер пустой")
+		logger.Println("[online]-> сервер пустой")
 	}
 
 	for _, inc := range br.Included {
 		if inc.Type == "player" {
 			names[inc.ID] = inc.Attributes.Name
-			log.Printf("[online]-> id %s: name %s", inc.ID, inc.Attributes.Name)
+			logger.Printf("[online]-> id %s: name %s", inc.ID, inc.Attributes.Name)
 		}
 	}
 
-	log.Println("[online] ======================================")
+	logger.Println("[online] ======================================")
 
 	// фильтруем только отслеживаемых
 	c.mu.RLock()
 	watch := make(map[string]string, len(c.playersToDetect))
-	for id, name := range c.playersToDetect {
-		watch[id] = name
-	}
+	maps.Copy(watch, c.playersToDetect)
 	c.mu.RUnlock()
 
 	curTracked := make(map[string]string)

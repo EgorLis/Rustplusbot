@@ -1,10 +1,10 @@
 package bot
 
 import (
+	"context"
 	"fmt"
-	"log"
 
-	"github.com/EgorLis/Rustplusbot/internal/rpclient"
+	"github.com/EgorLis/Rustplusbot/internal/rustplus"
 )
 
 type smartAlarm struct {
@@ -13,8 +13,8 @@ type smartAlarm struct {
 	callback func()
 }
 
-func (bot *RustPlusBot) initAlarmByID(id uint32) {
-	_ = bot.rpc.GetEntityInfo(id, func(m *rpclient.AppMessage) bool {
+func (bot *RustPlusBot) initAlarmByID(ctx context.Context, id uint32) {
+	_ = bot.rpc.GetEntityInfo(ctx, id, func(m *rustplus.AppMessage) bool {
 		info := m.GetResponse().GetEntityInfo()
 		if info != nil {
 			// безопасно достаём имя по id на момент коллбека
@@ -27,7 +27,7 @@ func (bot *RustPlusBot) initAlarmByID(id uint32) {
 			if p := info.GetPayload(); p != nil && p.Value != nil {
 				val = p.GetValue()
 			}
-			log.Printf("Init %s (%d): type=%v, value=%v\n", name, id, info.GetType(), val)
+			logger.Printf("Init %s (%d): type=%v, value=%v\n", name, id, info.GetType(), val)
 		}
 		return true
 	})

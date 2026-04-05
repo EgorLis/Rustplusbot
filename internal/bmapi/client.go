@@ -1,10 +1,19 @@
 package bmapi
 
 import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"maps"
 	"net/http"
+	"os"
 	"sync"
 	"time"
+
+	"github.com/EgorLis/Rustplusbot/internal/tools"
 )
+
+var logger = log.New(os.Stdout, "[bmapi] ", log.LstdFlags)
 
 type Client struct {
 	http   *http.Client
@@ -18,32 +27,6 @@ type Client struct {
 	stopCh          chan struct{}
 
 	etag string // для If-None-Match
-}
-
-type Player struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-type BMResponse struct {
-	Data struct {
-		ID            string `json:"id"`
-		Relationships struct {
-			Players struct {
-				Data []struct {
-					Type string `json:"type"`
-					ID   string `json:"id"`
-				} `json:"data"`
-			} `json:"players"`
-		} `json:"relationships"`
-	} `json:"data"`
-	Included []struct {
-		Type       string `json:"type"` // "player"
-		ID         string `json:"id"`
-		Attributes struct {
-			Name string `json:"name"`
-		} `json:"attributes"`
-	} `json:"included"`
 }
 
 type BMConf struct {
@@ -79,6 +62,10 @@ func NewClientFromConf(conf BMConf) *Client {
 	}
 }
 
+func (c *Client) UseCircularBufferLogs(circularBufferLogs *tools.CircularBuffer) {
+	logger = log.New(circularBufferLogs, "[bmapi] ", log.LstdFlags)
+}
+
 // AddPlayer добавляет нового игрока для отслеживания
 func (c *Client) AddPlayer(players ...Player) {
 	c.mu.Lock()
@@ -95,13 +82,50 @@ func (c *Client) RemovePlayer(playerId string) {
 	delete(c.playersToDetect, playerId)
 }
 
-// Players возвращает список отслеживаемых игроков в сети на момент последнего скана
-func (c *Client) Players() map[string]string {
+// OnlineTrackedPlayers возвращает список отслеживаемых игроков в сети на момент последнего скана
+func (c *Client) OnlineTrackedPlayers() map[string]string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	cp := make(map[string]string, len(c.lastPlayersScan))
-	for k, v := range c.lastPlayersScan {
-		cp[k] = v
-	}
+	maps.Copy(cp, c.lastPlayersScan)
 	return cp
+}
+
+func (c *Client) AllTrackedPlayers() map[string]string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	cp := make(map[string]string, len(c.playersToDetect))
+	maps.Copy(cp, c.playersToDetect)
+	return cp
+}
+
+// GetAllPlayers возвращает всех игроков на сервере (id -> name)
+func (c *Client) GetAllPlayers() (map[string]string, error) {
+	req, _ := http.NewRequest("GET",
+		fmt.Sprintf("https://api.battlemetrics.com/servers/%s?include=player", c.server), nil)
+	req.Header.Set("Authorization", "Bearer "+c.token)
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode/100 != 2 {
+		return nil, fmt.Errorf("bm api status %d", resp.StatusCode)
+	}
+
+	var br BMResponse
+	if err := json.NewDecoder(resp.Body).Decode(&br); err != nil {
+		return nil, err
+	}
+
+	names := make(map[string]string)
+	for _, inc := range br.Included {
+		if inc.Type == "player" {
+			names[inc.ID] = inc.Attributes.Name
+		}
+	}
+	return names, nil
 }
