@@ -44,9 +44,6 @@ type Client struct {
 	events Events
 }
 
-var once sync.Once
-var serverInfo *AppInfo
-
 type connection struct {
 	websocket *websocket.Conn
 	ctx       context.Context
@@ -128,17 +125,6 @@ func (c *Client) handleConnections(ctx context.Context, connections ...chan<- *c
 		}
 
 		writeChannels(ctx, conn, connections)
-
-		once.Do(func() {
-			c.GetInfo(ctx, func(am *AppMessage) bool {
-				if am.GetResponse() != nil && am.GetResponse().GetInfo() != nil {
-					serverInfo = am.GetResponse().GetInfo()
-					return true
-				}
-
-				return false
-			})
-		})
 	}
 
 	// initial connection

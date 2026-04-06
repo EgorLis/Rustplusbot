@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/EgorLis/Rustplusbot/internal/bot/mapw"
 	"github.com/EgorLis/Rustplusbot/internal/rustplus"
 	"github.com/EgorLis/Rustplusbot/internal/tools"
 	"github.com/EgorLis/Rustplusbot/internal/web"
@@ -85,7 +86,10 @@ func main() {
 		return false
 	})
 
-	go web.StartServer(rpc, 8080)
+	mapWatcher := mapw.NewMapWatcher(rpc)
+	mapWatcher.Init(ctx)
+
+	go web.StartServer(rpc, mapWatcher, 8080)
 
 	<-ctx.Done()
 	rpc.Stop()

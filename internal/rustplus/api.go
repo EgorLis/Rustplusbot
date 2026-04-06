@@ -155,10 +155,6 @@ func (c *Client) BotSay(ctx context.Context, msg string) error {
 	return err
 }
 
-func (c *Client) GetServerInfo() *AppInfo {
-	return serverInfo
-}
-
 // ========================= удобный враппер Camera =========================
 
 type Camera struct {
