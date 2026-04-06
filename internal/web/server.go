@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"math"
 	"net/http"
 	"time"
 
@@ -17,7 +18,6 @@ type MapData struct {
 	Monuments   []MonumentData
 	Width       uint32
 	Height      uint32
-	CellsCount  int
 }
 
 type MonumentData struct {
@@ -417,30 +417,38 @@ func handleMap(w http.ResponseWriter, r *http.Request, rpc *rustplus.Client) {
 	}
 
 	serverInfo := rpc.GetServerInfo()
-	mapSize := 4000
+	worldSize := 4000 // default world size
 	if serverInfo != nil {
-		mapSize = int(*serverInfo.MapSize)
+		worldSize = int(*serverInfo.MapSize)
 	}
+
+	// Water padding (обычно 2000 единиц воды вокруг карты)
+	const padWorld = 2000
+	totalWorld := worldSize + padWorld
+	halfPad := float64(padWorld) * 0.5
 
 	// Prepare data for template
 	imageBase64 := base64.StdEncoding.EncodeToString(mapData.JpgImage)
 
 	log.Printf("[web] Map size: %dx%d, monuments: %d", *mapData.Width, *mapData.Height, len(mapData.Monuments))
+	log.Printf("[web] World size: %d, total with water: %d", worldSize, totalWorld)
 
 	monuments := make([]MonumentData, 0, len(mapData.Monuments))
 	for _, m := range mapData.Monuments {
 		if *m.Name == "train_tunnel_display_name" {
 			continue
 		}
-		// Normalize coordinates using approximate map size (6000x6000 pixels)
-		x, y := calculateRelativePosition(mapSize, float64(*m.X), float64(*m.Y))
+
+		// Convert world coordinates to percentage for web display
+		x, y := worldToPercentage(float64(*m.X), float64(*m.Y), worldSize, halfPad, float64(totalWorld))
 
 		monuments = append(monuments, MonumentData{
 			Name: *m.Name,
 			X:    x,
 			Y:    y,
 		})
-		log.Printf("[web] Monument: %s at %.1f%%, %.1f%% (pixels: %.0f, %.0f)", *m.Name, x, y, *m.X, *m.Y)
+		log.Printf("[web] Monument: %s at world(%.0f, %.0f) -> web(%.2f%%, %.2f%%)",
+			*m.Name, *m.X, *m.Y, x, y)
 	}
 
 	data := MapData{
@@ -448,7 +456,6 @@ func handleMap(w http.ResponseWriter, r *http.Request, rpc *rustplus.Client) {
 		Monuments:   monuments,
 		Width:       *mapData.Width,
 		Height:      *mapData.Height,
-		CellsCount:  mapSize / 100,
 	}
 
 	w.Header().Set("Content-Type", "text/html")
@@ -458,15 +465,25 @@ func handleMap(w http.ResponseWriter, r *http.Request, rpc *rustplus.Client) {
 	}
 }
 
-func calculateRelativePosition(mapSize int, x, y float64) (float64, float64) {
-	cellCount := mapSize / 100
-	cellSize := float64(mapSize) / float64(cellCount-14)
+// worldToPercentage converts world coordinates (with water zone) to percentage for web display
+// This mimics the logic from the C# code that handles the water padding around the map
+func worldToPercentage(x, y float64, worldSize int, halfPad, totalWorld float64) (float64, float64) {
+	// Clamp coordinates to the extended world bounds (including water)
+	worldSizeFloat := float64(worldSize)
+	minBound := -halfPad
+	maxBound := worldSizeFloat + halfPad
 
-	gridX := float64(x)/cellSize + 7
-	gridY := float64(y)/cellSize + 7
+	xx := math.Max(minBound, math.Min(maxBound, x))
+	yy := math.Max(minBound, math.Min(maxBound, y))
 
-	x = gridX / float64(cellCount) * 100
-	y = 100 - gridY/float64(cellCount)*100
+	// Normalize to [0, 1] range considering the water padding
+	// Shift by halfPad so that -halfPad becomes 0
+	normalizedX := (xx + halfPad) / totalWorld
+	normalizedY := (yy + halfPad) / totalWorld
 
-	return x, y
+	// Convert to percentage and invert Y for web display (Y grows downward in web)
+	percentX := normalizedX * 100
+	percentY := 100 - (normalizedY * 100)
+
+	return percentX, percentY
 }
