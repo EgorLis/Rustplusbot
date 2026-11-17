@@ -18,6 +18,7 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 	if len(fields) == 0 {
 		return nil
 	}
+
 	cmd := strings.ToLower(fields[0])
 
 	say := func(s string) { _ = bot.rpc.BotSay(s) }
@@ -56,60 +57,74 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 		} else {
 			s1 = "unset"
 		}
+
 		if bot.bt2switch != nil {
 			s2 = fmt.Sprintf("%s(%d)=%t", bot.bt2switch.name, bot.bt2switch.id, bot.bt2switch.state)
 		} else {
 			s2 = "unset"
 		}
+
 		say(fmt.Sprintf("BT1: %s | BT2: %s", s1, s2))
 		return nil
 
 	case "!bt1":
 		if len(fields) >= 2 && strings.ToLower(fields[1]) == "set" && len(fields) >= 4 {
-			id, err := parseUint32(fields[2])
+			id, err := parseEntityID(fields[2])
 			if err != nil {
 				return err
 			}
+
 			name := fields[3]
 			if err := bot.SetSwitch(1, id, name); err != nil {
 				return err
 			}
+
 			if bot.cfg != nil {
 				bot.cfg.mu.Lock()
 				if bot.cfg.data.BT1 == nil {
 					bot.cfg.data.BT1 = &SwitchConf{}
 				}
+
 				bot.cfg.data.BT1.ID, bot.cfg.data.BT1.Name = id, name
 				bot.cfg.mu.Unlock()
+
 				_ = bot.cfg.Save()
 			}
+
 			say(fmt.Sprintf("BT1 set: %s(%d)", name, id))
 			return nil
 		}
+
 		return fmt.Errorf("usage: !bt1 set <id> <name>")
 
 	case "!bt2":
 		if len(fields) >= 2 && strings.ToLower(fields[1]) == "set" && len(fields) >= 4 {
-			id, err := parseUint32(fields[2])
+			id, err := parseEntityID(fields[2])
 			if err != nil {
 				return err
 			}
+
 			name := fields[3]
 			if err := bot.SetSwitch(2, id, name); err != nil {
 				return err
 			}
+
 			if bot.cfg != nil {
 				bot.cfg.mu.Lock()
 				if bot.cfg.data.BT2 == nil {
 					bot.cfg.data.BT2 = &SwitchConf{}
 				}
+
 				bot.cfg.data.BT2.ID, bot.cfg.data.BT2.Name = id, name
 				bot.cfg.mu.Unlock()
+
 				_ = bot.cfg.Save()
 			}
+
 			say(fmt.Sprintf("BT2 set: %s(%d)", name, id))
 			return nil
 		}
+
 		return fmt.Errorf("usage: !bt2 set <id> <name>")
 
 	// ---------- ALARMS ----------
@@ -117,6 +132,7 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 		if len(fields) < 2 {
 			return fmt.Errorf("usage: !alarm add|del|list")
 		}
+
 		sub := strings.ToLower(fields[1])
 
 		switch sub {
@@ -125,6 +141,7 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 				say("alarms: (empty)")
 				return nil
 			}
+
 			var rows []string
 			for id, a := range bot.alarms {
 				// звук берём из конфига (если он есть)
@@ -138,25 +155,31 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 						}
 					}
 				}
+
 				rows = append(rows, fmt.Sprintf("%s(%d) msg=%q sound=%q", a.name, id, a.msg, sound))
 			}
+
 			say("alarms:\n" + strings.Join(rows, "\n"))
 			return nil
 		case "mute":
 			bot.amMu.Lock()
 			defer bot.amMu.Unlock()
+
 			if bot.amIsMuted {
 				return fmt.Errorf("alarms already muted")
 			}
+
 			bot.amIsMuted = true
 			say("alarms muted")
 			return nil
 		case "unmute":
 			bot.amMu.Lock()
 			defer bot.amMu.Unlock()
+
 			if !bot.amIsMuted {
 				return fmt.Errorf("alarms not muted")
 			}
+
 			bot.amIsMuted = false
 			say("alarms unmuted")
 			return nil
@@ -165,10 +188,12 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 			if len(fields) < 4 {
 				return fmt.Errorf("usage: !alarm add <id> <name> [msg=\"...\"] [sound=1.mp3|none]")
 			}
-			id, err := parseUint32(fields[2])
+
+			id, err := parseEntityID(fields[2])
 			if err != nil {
 				return err
 			}
+
 			name := fields[3]
 			kv := parseKV(fields[4:]) // msg=..., sound=...
 			msg := kv["msg"]
@@ -181,8 +206,10 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 				bot.cfg.mu.Lock()
 				bot.cfg.data.Alarms[id] = AlarmConf{ID: id, Name: name, Msg: msg, Sound: sound}
 				bot.cfg.mu.Unlock()
+
 				_ = bot.cfg.Save()
 			}
+
 			say(fmt.Sprintf("alarm added: %s(%d)", name, id))
 			return nil
 
@@ -190,17 +217,21 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 			if len(fields) < 3 {
 				return fmt.Errorf("usage: !alarm del <id>")
 			}
-			id, err := parseUint32(fields[2])
+
+			id, err := parseEntityID(fields[2])
 			if err != nil {
 				return err
 			}
+
 			delete(bot.alarms, id)
 			if bot.cfg != nil {
 				bot.cfg.mu.Lock()
 				delete(bot.cfg.data.Alarms, id)
 				bot.cfg.mu.Unlock()
+
 				_ = bot.cfg.Save()
 			}
+
 			say(fmt.Sprintf("alarm deleted: %d", id))
 			return nil
 
@@ -213,9 +244,11 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 		if bot.bm == nil {
 			return fmt.Errorf("BM not connected")
 		}
+
 		if len(fields) < 2 {
 			return fmt.Errorf("usage: !track add|del|list|info")
 		}
+
 		sub := strings.ToLower(fields[1])
 
 		switch sub {
@@ -224,10 +257,12 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 				say("tracked: (empty)")
 				return nil
 			}
+
 			var rows []string
 			for _, p := range bot.cfg.data.Players {
 				rows = append(rows, fmt.Sprintf("%s (%s)", p.Name, p.ID))
 			}
+
 			say("tracked:\n" + strings.Join(rows, "\n"))
 			return nil
 		case "info":
@@ -235,6 +270,7 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 				say("tracked: (empty)")
 				return nil
 			}
+
 			onlineInfo := bot.bm.IsOnline()
 			say(bot.bm.FormatOnlineInfo(onlineInfo))
 
@@ -244,6 +280,7 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 			if len(fields) < 3 {
 				return fmt.Errorf("usage: !track add <steamid> [name]")
 			}
+
 			steam := fields[2]
 			name := ""
 			if len(fields) >= 4 {
@@ -262,12 +299,16 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 						break
 					}
 				}
+
 				if !found {
 					bot.cfg.data.Players = append(bot.cfg.data.Players, PlayerConf{ID: steam, Name: name})
 				}
+
 				bot.cfg.mu.Unlock()
+
 				_ = bot.cfg.Save()
 			}
+
 			say(fmt.Sprintf("track added: %s (%s)", name, steam))
 			return nil
 
@@ -275,6 +316,7 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 			if len(fields) < 3 {
 				return fmt.Errorf("usage: !track del <steamid>")
 			}
+
 			steam := fields[2]
 
 			bot.bm.RemovePlayer(steam)
@@ -287,10 +329,13 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 						out = append(out, p)
 					}
 				}
+
 				bot.cfg.data.Players = out
 				bot.cfg.mu.Unlock()
+
 				_ = bot.cfg.Save()
 			}
+
 			say(fmt.Sprintf("track deleted: %s", steam))
 			return nil
 
@@ -301,6 +346,7 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 		if len(fields) < 2 {
 			return fmt.Errorf("usage: !death set|start|stop|status")
 		}
+
 		sub := strings.ToLower(fields[1])
 
 		switch sub {
@@ -309,16 +355,19 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 			if len(fields) < 3 {
 				return fmt.Errorf("usage: !death set <steamid> [sound=1.mp3|none]")
 			}
+
 			steamID, err := strconv.ParseUint(fields[2], 10, 64)
 			if err != nil {
 				return fmt.Errorf("bad steamid: %w", err)
 			}
+
 			var sound *string
 			if len(fields) >= 4 {
 				kv := parseKV(fields[3:])
 				s := strings.TrimSpace(kv["sound"])
 				sound = &s // может быть "none" или имя файла
 			}
+
 			bot.SetCheckPlayerDeath(steamID, sound)
 			_ = bot.rpc.BotSay(fmt.Sprintf("death-watch target set: %d", steamID))
 			return nil
@@ -331,9 +380,11 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 					sec = v
 				}
 			}
+
 			if err := bot.StartDeathWatch(time.Duration(sec) * time.Second); err != nil {
 				return err
 			}
+
 			_ = bot.rpc.BotSay(fmt.Sprintf("death-watch started (%ds)", sec))
 			return nil
 
@@ -347,11 +398,13 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 			running := bot.dwRunning
 			ev := bot.dwEvery
 			bot.dwMu.Unlock()
+
 			if running {
 				_ = bot.rpc.BotSay(fmt.Sprintf("death-watch: running (every %s)", ev))
 			} else {
 				_ = bot.rpc.BotSay("death-watch: stopped")
 			}
+
 			return nil
 
 		default:
@@ -364,9 +417,11 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 			if err := bot.cfg.Save(); err != nil {
 				return err
 			}
+
 			say("config saved")
 			return nil
 		}
+
 		return fmt.Errorf("config not enabled")
 
 	default:
@@ -374,9 +429,9 @@ func (bot *RustPlusBot) HandleCommand(text string) error {
 	}
 }
 
-func parseUint32(s string) (uint32, error) {
-	u, err := strconv.ParseUint(s, 10, 32)
-	return uint32(u), err
+func parseEntityID(s string) (uint64, error) {
+	u, err := strconv.ParseUint(s, 10, 64)
+	return uint64(u), err
 }
 
 func splitArgs(s string) []string {
@@ -388,6 +443,7 @@ func splitArgs(s string) []string {
 			out = append(out, m[2])
 		}
 	}
+
 	return out
 }
 
@@ -399,5 +455,6 @@ func parseKV(args []string) map[string]string {
 			res[strings.ToLower(kv[0])] = kv[1]
 		}
 	}
+
 	return res
 }

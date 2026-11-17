@@ -27,6 +27,7 @@ func (bot *RustPlusBot) StartDeathWatch(every time.Duration) error {
 	if bot.checkPlayerDeath == nil {
 		return fmt.Errorf("death-watch: steamID не задан (вызови SetCheckPlayerDeath)")
 	}
+
 	if bot.dwRunning {
 		// можно обновить интервал на лету
 		bot.dwEvery = every
@@ -45,9 +46,11 @@ func (bot *RustPlusBot) StartDeathWatch(every time.Duration) error {
 func (bot *RustPlusBot) StopDeathWatch() {
 	bot.dwMu.Lock()
 	defer bot.dwMu.Unlock()
+
 	if !bot.dwRunning {
 		return
 	}
+
 	bot.dwRunning = false
 	if bot.dwCancel != nil {
 		bot.dwCancel()
@@ -72,6 +75,7 @@ func (bot *RustPlusBot) checkDeath(ti *rpclient.AppTeamInfo, say func(string)) {
 			break
 		}
 	}
+
 	if me == nil {
 		return
 	}
@@ -91,6 +95,7 @@ func (bot *RustPlusBot) checkDeath(ti *rpclient.AppTeamInfo, say func(string)) {
 		if !online {
 			pd.lastLogoutAt = time.Now()
 		}
+
 		//log.Printf("[death] init: online: %t, alive: %t, death time: %d", online, alive, dt)
 		return
 	}
@@ -114,6 +119,7 @@ func (bot *RustPlusBot) checkDeath(ti *rpclient.AppTeamInfo, say func(string)) {
 		if pd.callback != nil {
 			go pd.callback()
 		}
+
 		// дальше просто обновим флаги и выйдем
 	}
 
@@ -152,8 +158,10 @@ func (bot *RustPlusBot) deathPollLoop(ctx context.Context) {
 						notConnectedBackoff = maxBackoff
 					}
 				}
+
 				continue
 			}
+
 			// есть соединение — сбросим backoff
 			notConnectedBackoff = time.Second
 
@@ -165,6 +173,7 @@ func (bot *RustPlusBot) deathPollLoop(ctx context.Context) {
 				// сеть/таймаут — молча ждём следующий тик
 				continue
 			}
+
 			ti := resp.GetTeamInfo()
 			if ti == nil {
 				continue

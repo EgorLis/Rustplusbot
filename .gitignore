@@ -5,3 +5,6 @@ conf
 # Folder with music
 
 sounds
+# Local executable and private connection checks
+.local/
+.vscode/

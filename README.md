@@ -1,3 +1,5 @@
+> Connection update (2026-11-17): use the authenticated companion socket. See [CONNECTION.md](CONNECTION.md) for the current config and [schema regeneration](internal/proto/README.md). Older IP/port/proxy connection examples below are obsolete.
+
 # Rust Plus Bot
 
 [🇬🇧 English](#english) | [🇷🇺 Русский](#русский)
@@ -195,7 +197,7 @@ The bot periodically requests `TeamInfo` and reports: "**I died 💀**" (online 
 ```
 
 ## Running from source
-Requires Go 1.21+ (preferred) and Windows (for the key interception module):
+Requires Go 1.27.4+ (preferred) and Windows (for the key interception module):
 ```bash
 go build -o rustplusbot.exe
 ./rustplusbot.exe
@@ -414,7 +416,7 @@ BT1/BT2 также можно дергать физическими кнопка
 ```
 
 ## Запуск из исходников
-Требуется Go 1.21+ (желательно) и Windows (для модуля перехвата клавиш):
+Требуется Go 1.27.4+ (желательно) и Windows (для модуля перехвата клавиш):
 ```bash
 go build -o rustplusbot.exe
 ./rustplusbot.exe

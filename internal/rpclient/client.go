@@ -13,32 +13,34 @@ import (
 )
 
 type RustPlusConfig struct {
-	Server      string `json:"server"`
-	Port        int    `json:"port"`
-	PlayerID    uint64 `json:"player_id"`
-	PlayerToken int32  `json:"player_token"`
-	UseProxy    bool   `json:"use_proxy"`
+	PlayerID      uint64 `json:"player_id"`
+	PlayerToken   int32  `json:"player_token"`
+	ServerID      string `json:"server_id,omitempty"`
+	AuthToken     string `json:"auth_token,omitempty"`
+	AuthTokenFile string `json:"auth_token_file,omitempty"`
 }
 
 type RustPlus struct {
-	server      string
-	port        int
-	playerID    uint64
-	playerToken int32
-	useProxy    bool
+	server        string
+	port          int
+	playerID      uint64
+	playerToken   int32
+	useProxy      bool
+	serverID      string
+	authToken     string
+	authTokenFile string
 
-	conn   *websocket.Conn
-	seq    uint32
-	mu     sync.Mutex
-	cbs    map[uint32]func(*AppMessage) bool
-	closed atomic.Bool
+	serverInfo  *AppInfo
+	lifecycleMu sync.Mutex
+	connMu      sync.Mutex
+	conn        *websocket.Conn
+	cancel      context.CancelFunc
+	running     bool
+	seq         uint32
+	mu          sync.Mutex
+	cbs         map[uint32]func(*AppMessage) bool
+	wmu         sync.Mutex
 
-	// добавлено:
-	wmu          sync.Mutex    // сериализует запись в websocket
-	pingStop     chan struct{} // стоп-канал для ping-горутин
-	lastActivity atomic.Int64  // unix nanos последнего успешного приёма сообщения
-
-	// "События" (аналог EventEmitter)
 	OnConnecting   func()
 	OnConnected    func()
 	OnMessage      func(*AppMessage)
@@ -58,50 +60,109 @@ func New(server string, port int, playerID uint64, playerToken int32, useProxy b
 	}
 }
 
-// Connect — устанавливает WebSocket и запускает readLoop.
-// Контекст можно отменить для мягкого выхода из readLoop.
+func (rp *RustPlus) nextSeq() uint32 {
+	return atomic.AddUint32(&rp.seq, 1)
+}
+
+// Connect validates a Rust+ reply before publishing the connection.
 func (rp *RustPlus) Connect(ctx context.Context) error {
+	return rp.ConnectWithTimeout(ctx, 10*time.Second)
+}
+
+// The timeout bounds only this attempt, not the lifetime of a successful connection.
+func (rp *RustPlus) ConnectWithTimeout(ctx context.Context, timeout time.Duration) error {
+	rp.lifecycleMu.Lock()
+	defer rp.lifecycleMu.Unlock()
+
+	rp.connMu.Lock()
+	running := rp.running
+	rp.connMu.Unlock()
+
+	if running {
+		return errors.New("Rust+ client is already running")
+	}
+
 	if rp.OnConnecting != nil {
 		rp.OnConnecting()
 	}
-	conn, err := rp.dialAndSetup()
+
+	attempt, stop := context.WithTimeout(ctx, timeout)
+	defer stop()
+
+	conn, err := rp.dialAndSetup(attempt)
 	if err != nil {
 		return err
 	}
-	rp.conn = conn
-	rp.closed.Store(false)
+
+	lifetime, cancel := context.WithCancel(ctx)
+
+	rp.connMu.Lock()
+	if lifetime.Err() != nil {
+		rp.connMu.Unlock()
+
+		cancel()
+		conn.Close()
+		return lifetime.Err()
+	}
+
+	rp.conn, rp.cancel, rp.running = conn, cancel, true
+	rp.connMu.Unlock()
+
+	go rp.readLoop(lifetime, conn)
 
 	if rp.OnConnected != nil {
 		rp.OnConnected()
 	}
 
-	go rp.readLoop(ctx)
 	return nil
 }
 
 func (rp *RustPlus) Disconnect() {
-	rp.closed.Store(true)
-	rp.closeConn()
-	if rp.OnDisconnected != nil {
-		rp.OnDisconnected()
+	rp.connMu.Lock()
+	cancel := rp.cancel
+	rp.connMu.Unlock()
+
+	if cancel != nil {
+		cancel()
 	}
+
+	rp.closeConn()
 }
 
 func (rp *RustPlus) IsConnected() bool {
-	return rp.conn != nil && !rp.closed.Load()
+	rp.connMu.Lock()
+	defer rp.connMu.Unlock()
+
+	return rp.conn != nil
 }
 
-// SendRequest — отправляет AppRequest, привязывая seq/игрока.
-// Если cb != nil, будет вызван по ответу с тем же seq; возвращаемое cb(bool)
-// если вернёт true — событие OnMessage НЕ вызовется для этого сообщения (как в JS).
 func (rp *RustPlus) SendRequest(req *AppRequest, cb func(*AppMessage) bool) error {
-	if rp.conn == nil {
-		return fmt.Errorf("not connected")
+	rp.connMu.Lock()
+	conn := rp.conn
+	rp.connMu.Unlock()
+
+	return rp.sendRequestOn(conn, req, cb)
+}
+
+func (rp *RustPlus) sendRequestOn(conn *websocket.Conn, req *AppRequest, cb func(*AppMessage) bool) error {
+	if req == nil {
+		return errors.New("nil Rust+ request")
 	}
+
 	seq := rp.nextSeq()
-	req.Seq = &seq
-	req.PlayerId = &rp.playerID
-	req.PlayerToken = &rp.playerToken
+	req.Seq, req.PlayerId, req.PlayerToken = &seq, &rp.playerID, &rp.playerToken
+
+	data, err := proto.Marshal(req)
+	if err != nil {
+		return err
+	}
+
+	rp.connMu.Lock()
+	if conn == nil || rp.conn != conn {
+		rp.connMu.Unlock()
+
+		return errors.New("Rust+ is not connected")
+	}
 
 	if cb != nil {
 		rp.mu.Lock()
@@ -109,57 +170,70 @@ func (rp *RustPlus) SendRequest(req *AppRequest, cb func(*AppMessage) bool) erro
 		rp.mu.Unlock()
 	}
 
-	data, err := proto.Marshal(req)
-	if err != nil {
-		return err
-	}
+	rp.connMu.Unlock()
 
 	if rp.OnRequest != nil {
 		rp.OnRequest(req)
 	}
 
-	// запись строго через один мьютекс + write‑deadline
 	rp.wmu.Lock()
-	_ = rp.conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
-	werr := rp.conn.WriteMessage(websocket.BinaryMessage, data)
+	conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
+	err = conn.WriteMessage(websocket.BinaryMessage, data)
 	rp.wmu.Unlock()
 
-	if werr != nil {
-		// сеть упала между подготовкой и записью — подчищаем cb
-		rp.mu.Lock()
-		delete(rp.cbs, seq)
-		rp.mu.Unlock()
-		return werr
+	if err != nil {
+		rp.removeCallback(seq)
+		conn.Close() // Wake the reader and reconnect after a failed write.
 	}
-	return nil
+
+	return err
 }
 
-// SendRequestAsync — как промис в JS-версии.
-func (rp *RustPlus) SendRequestAsync(req *AppRequest, timeout time.Duration) (*AppResponse, error) {
-	respCh := make(chan *AppResponse, 1)
-	errCh := make(chan error, 1)
+func (rp *RustPlus) removeCallback(seq uint32) {
+	rp.mu.Lock()
+	delete(rp.cbs, seq)
+	rp.mu.Unlock()
+}
 
+func (rp *RustPlus) SendRequestAsync(req *AppRequest, timeout time.Duration) (*AppResponse, error) {
+	responses := make(chan *AppResponse, 1)
 	err := rp.SendRequest(req, func(m *AppMessage) bool {
-		if r := m.GetResponse(); r != nil {
-			if r.Error != nil {
-				errCh <- errors.New(r.Error.GetError())
-				return true
-			}
-			respCh <- r
-			return true
-		}
-		return false
+		responses <- m.GetResponse()
+		return true
 	})
 	if err != nil {
 		return nil, err
 	}
 
+	defer rp.removeCallback(req.GetSeq())
+
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+
 	select {
-	case r := <-respCh:
+	case r := <-responses:
+		if r == nil {
+			return nil, errors.New("empty Rust+ response")
+		}
+
+		if r.Error != nil {
+			return nil, errors.New(r.Error.GetError())
+		}
+
 		return r, nil
-	case e := <-errCh:
-		return nil, e
-	case <-time.After(timeout):
-		return nil, fmt.Errorf("timeout waiting for response")
+	case <-timer.C:
+		return nil, fmt.Errorf("timeout waiting for Rust+ response after %v", timeout)
 	}
+}
+
+// ServerInfo is the immutable snapshot obtained by the most recent connection verification.
+func (rp *RustPlus) ServerInfo() *AppInfo {
+	rp.connMu.Lock()
+	defer rp.connMu.Unlock()
+
+	if rp.serverInfo == nil {
+		return nil
+	}
+
+	return proto.Clone(rp.serverInfo).(*AppInfo)
 }

@@ -5,136 +5,150 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"google.golang.org/protobuf/proto"
 )
 
-func (rp *RustPlus) readLoop(ctx context.Context) {
-	defer func() {
-		rp.closed.Store(true)
+func (rp *RustPlus) readLoop(ctx context.Context, conn *websocket.Conn) {
+	watcherDone := make(chan struct{})
+	stopWatcher := context.AfterFunc(ctx, func() {
 		rp.closeConn()
-		if rp.OnDisconnected != nil {
-			rp.OnDisconnected()
-		}
-	}()
+		close(watcherDone)
+	})
 
-	// закрыть по отмене контекста
-	go func() {
-		<-ctx.Done()
+	defer func() {
+		if !stopWatcher() {
+			<-watcherDone
+		}
+
 		rp.closeConn()
+		rp.failPendingCallbacks(fmt.Errorf("Rust+ disconnected"))
+		rp.connMu.Lock()
+		rp.running, rp.cancel = false, nil
+		rp.connMu.Unlock()
 	}()
 
 	backoff := time.Second
 
 	for {
-		// подстраховка от nil (необязательно, но безопасно)
-		if rp.conn == nil {
-			// имитируем ошибку сети, чтобы провалиться в ветку реконнекта
-			err := fmt.Errorf("connection is nil")
-			if rp.OnError != nil && !rp.closed.Load() {
-				rp.OnError(err)
+		session, stopHeartbeat := context.WithCancel(ctx)
+		rp.startHeartbeat(session, conn)
+
+		err := rp.readMessages(conn)
+		stopHeartbeat()
+
+		rp.closeConn()
+		rp.failPendingCallbacks(fmt.Errorf("Rust+ connection lost"))
+
+		if rp.OnDisconnected != nil {
+			rp.OnDisconnected()
+		}
+
+		if ctx.Err() != nil {
+			return
+		}
+
+		if rp.OnError != nil {
+			rp.OnError(err)
+		}
+
+		for {
+			timer := time.NewTimer(backoff)
+			select {
+			case <-ctx.Done():
+				timer.Stop()
+				return
+			case <-timer.C:
 			}
-			// пойдём в реконнект ниже
-		} else {
-			_, data, err := rp.conn.ReadMessage()
-			if err == nil {
-				var msg AppMessage
-				if uerr := proto.Unmarshal(data, &msg); uerr != nil {
-					if rp.OnError != nil {
-						rp.OnError(uerr)
-					}
-					continue
+
+			if rp.OnConnecting != nil {
+				rp.OnConnecting()
+			}
+
+			next, err := rp.dialAndSetup(ctx)
+			if err != nil {
+				if ctx.Err() != nil {
+					return
 				}
 
-				// успешное чтение
-				rp.touchActivity()
-
-				// callbacks по seq
-				if resp := msg.GetResponse(); resp != nil && resp.Seq != nil {
-					seq := *resp.Seq
-					rp.mu.Lock()
-					cb, ok := rp.cbs[seq]
-					if ok {
-						delete(rp.cbs, seq)
-					}
-					rp.mu.Unlock()
-					if ok && cb(&msg) {
-						continue
-					}
+				if rp.OnError != nil {
+					rp.OnError(fmt.Errorf("reconnect failed: %w; next attempt in %v", err, min(2*backoff, 30*time.Second)))
 				}
 
-				if rp.OnMessage != nil {
-					rp.OnMessage(&msg)
-				}
-
-				backoff = time.Second
+				backoff = min(2*backoff, 30*time.Second)
 				continue
 			}
 
-			// ошибка чтения
-			if rp.OnError != nil && !rp.closed.Load() {
-				rp.OnError(err)
-			}
-			if rp.closed.Load() {
+			rp.connMu.Lock()
+			if ctx.Err() != nil {
+				rp.connMu.Unlock()
+
+				next.Close()
 				return
 			}
-		}
 
-		// закрываем и фейлим ожидающие
-		rp.closeConn()
-		rp.failPendingCallbacks(fmt.Errorf("connection lost"))
+			rp.conn = next
+			rp.connMu.Unlock()
 
-		// реконнект с backoff
-		for !rp.closed.Load() {
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(backoff):
-				conn, derr := rp.dialAndSetup()
-				if derr != nil {
-					if rp.OnError != nil {
-						rp.OnError(fmt.Errorf("reconnect failed (wait %v): %w", backoff, derr))
-					}
-					if backoff < 30*time.Second {
-						backoff *= 2
-						if backoff > 30*time.Second {
-							backoff = 30 * time.Second
-						}
-					}
-					continue
-				}
-				rp.conn = conn
-				rp.touchActivity() // <<< отметим «живость» сразу после удачного коннекта
-				if rp.OnConnected != nil {
-					rp.OnConnected()
-				}
-				backoff = time.Second
-				goto CONTINUE_READ
+			conn = next
+			backoff = time.Second
+
+			if rp.OnConnected != nil {
+				go rp.OnConnected()
 			}
+
+			break
 		}
-	CONTINUE_READ:
-		continue
 	}
 }
 
-// пометить все ожидающие callbacks ошибкой при реконнекте/закрытии
+func (rp *RustPlus) readMessages(conn *websocket.Conn) error {
+	for {
+		_, data, err := conn.ReadMessage()
+		if err != nil {
+			return err
+		}
+
+		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+
+		var msg AppMessage
+		// The live companion route omits default-valued proto2 fields (e.g. queuedPlayers=0).
+		// Decode those as defaults while still rejecting malformed wire data.
+		if err := (proto.UnmarshalOptions{AllowPartial: true}).Unmarshal(data, &msg); err != nil {
+			if rp.OnError != nil {
+				rp.OnError(err)
+			}
+
+			continue
+		}
+
+		if resp := msg.GetResponse(); resp != nil && resp.Seq != nil {
+			rp.mu.Lock()
+			cb := rp.cbs[resp.GetSeq()]
+			delete(rp.cbs, resp.GetSeq())
+			rp.mu.Unlock()
+
+			if cb != nil && cb(&msg) {
+				continue
+			}
+		}
+
+		if rp.OnMessage != nil {
+			rp.OnMessage(&msg)
+		}
+	}
+}
+
+// Invoke user callbacks after releasing the lock so they can safely send another request.
 func (rp *RustPlus) failPendingCallbacks(err error) {
 	rp.mu.Lock()
-	defer rp.mu.Unlock()
-	if len(rp.cbs) == 0 {
-		return
-	}
-	for k := range rp.cbs {
-		cb := rp.cbs[k]
-		// оборачиваем в искусственный AppMessage с AppResponse.Error
+	pending := rp.cbs
+	rp.cbs = make(map[uint32]func(*AppMessage) bool)
+	rp.mu.Unlock()
+
+	for seq, cb := range pending {
 		if cb != nil {
-			msg := &AppMessage{
-				Response: &AppResponse{
-					Error: &AppError{Error: proto.String(err.Error())},
-				},
-			}
-			// вызвать cb, но он «съест» сообщение и мы тут ничего не ждём
-			cb(msg)
+			cb(&AppMessage{Response: &AppResponse{Seq: proto.Uint32(seq), Error: &AppError{Error: proto.String(err.Error())}}})
 		}
-		delete(rp.cbs, k)
 	}
 }

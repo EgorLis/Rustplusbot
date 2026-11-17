@@ -10,29 +10,30 @@ import (
 
 // ========================= high-level API  =========================
 
-func (rp *RustPlus) SetEntityValue(entityID uint32, value bool, cb func(*AppMessage) bool) error {
+func (rp *RustPlus) SetEntityValue(entityID uint64, value bool, cb func(*AppMessage) bool) error {
 	return rp.SendRequest(&AppRequest{
-		EntityId: proto.Uint32(entityID),
+		EntityId: proto.Uint64(entityID),
 		SetEntityValue: &AppSetEntityValue{
 			Value: proto.Bool(value),
 		},
 	}, cb)
 }
 
-func (rp *RustPlus) TurnSmartSwitchOn(entityID uint32, cb func(*AppMessage) bool) error {
+func (rp *RustPlus) TurnSmartSwitchOn(entityID uint64, cb func(*AppMessage) bool) error {
 	return rp.SetEntityValue(entityID, true, cb)
 }
 
-func (rp *RustPlus) TurnSmartSwitchOff(entityID uint32, cb func(*AppMessage) bool) error {
+func (rp *RustPlus) TurnSmartSwitchOff(entityID uint64, cb func(*AppMessage) bool) error {
 	return rp.SetEntityValue(entityID, false, cb)
 }
 
 // Strobe — как в JS: быстрое мигание (осторожно с rate limit).
-func (rp *RustPlus) Strobe(ctx context.Context, entityID uint32, interval time.Duration, start bool) {
+func (rp *RustPlus) Strobe(ctx context.Context, entityID uint64, interval time.Duration, start bool) {
 	_ = rp.SetEntityValue(entityID, start, nil)
 	t := time.NewTicker(interval)
 	go func() {
 		defer t.Stop()
+
 		val := start
 		for {
 			select {
@@ -56,9 +57,9 @@ func (rp *RustPlus) SendTeamMessage(message string, cb func(*AppMessage) bool) e
 	}, cb)
 }
 
-func (rp *RustPlus) GetEntityInfo(entityID uint32, cb func(*AppMessage) bool) error {
+func (rp *RustPlus) GetEntityInfo(entityID uint64, cb func(*AppMessage) bool) error {
 	return rp.SendRequest(&AppRequest{
-		EntityId:      proto.Uint32(entityID),
+		EntityId:      proto.Uint64(entityID),
 		GetEntityInfo: &AppEmpty{},
 	}, cb)
 }
@@ -123,6 +124,7 @@ func (rp *RustPlus) BotSay(msg string) error {
 	if err != nil {
 		log.Println(err)
 	}
+
 	return err
 }
 
@@ -142,6 +144,7 @@ func (c *Camera) Subscribe(cb func(*AppMessage) bool) error {
 	if err := c.rp.SubscribeToCamera(c.id, cb); err != nil {
 		return err
 	}
+
 	c.sub = true
 	return nil
 }
@@ -150,6 +153,7 @@ func (c *Camera) Unsubscribe(cb func(*AppMessage) bool) error {
 	if !c.sub {
 		return nil
 	}
+
 	c.sub = false
 	return c.rp.UnsubscribeFromCamera(cb)
 }

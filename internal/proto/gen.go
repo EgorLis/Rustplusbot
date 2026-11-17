@@ -1,4 +1,4 @@
-// Для генерации файла запускай в консоли из корня проекта: go generate ./internal/proto
+// Package proto owns the Rust+ wire schema. See README.md for its source and tool versions.
 package proto
 
-//go:generate protoc --go_out=../rpclient --go_opt=paths=source_relative rustplus.proto
+//go:generate powershell -NoProfile -ExecutionPolicy Bypass -File ../../scripts/generate-proto.ps1

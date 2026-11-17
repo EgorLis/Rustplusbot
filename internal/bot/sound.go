@@ -21,6 +21,7 @@ func PlaySoundFile(path string) error {
 		// Linux
 		cmd = exec.Command("xdg-open", path)
 	}
+
 	return cmd.Start()
 }
 
@@ -30,6 +31,7 @@ func (bot *RustPlusBot) callbackForSound(sound string) func() {
 	if s == "" || strings.EqualFold(s, "none") {
 		return nil
 	}
+
 	path := filepath.Join("sounds", s) // ./sounds/<sound>
 
 	return func() {

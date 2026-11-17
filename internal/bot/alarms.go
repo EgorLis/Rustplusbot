@@ -13,7 +13,7 @@ type smartAlarm struct {
 	callback func()
 }
 
-func (bot *RustPlusBot) initAlarmByID(id uint32) {
+func (bot *RustPlusBot) initAlarmByID(id uint64) {
 	_ = bot.rpc.GetEntityInfo(id, func(m *rpclient.AppMessage) bool {
 		info := m.GetResponse().GetEntityInfo()
 		if info != nil {
@@ -23,12 +23,15 @@ func (bot *RustPlusBot) initAlarmByID(id uint32) {
 			if ok {
 				name = a.name
 			}
+
 			var val any = nil
 			if p := info.GetPayload(); p != nil && p.Value != nil {
 				val = p.GetValue()
 			}
+
 			log.Printf("Init %s (%d): type=%v, value=%v\n", name, id, info.GetType(), val)
 		}
+
 		return true
 	})
 }

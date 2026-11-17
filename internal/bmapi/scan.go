@@ -16,8 +16,10 @@ func (c *Client) StartScan(interval time.Duration, notify func(string)) error {
 	c.mu.Lock()
 	if c.running {
 		c.mu.Unlock()
+
 		return nil
 	}
+
 	c.running = true
 	c.stopCh = make(chan struct{})
 	c.mu.Unlock()
@@ -42,6 +44,7 @@ func (c *Client) StartScan(interval time.Duration, notify func(string)) error {
 					log.Println(err)
 					continue
 				}
+
 				c.mu.Lock()
 				prev := c.lastPlayersScan
 				// join
@@ -52,10 +55,12 @@ func (c *Client) StartScan(interval time.Duration, notify func(string)) error {
 							if wantName == "" {
 								wantName = name
 							}
+
 							notify(fmt.Sprintf("➡ %s вошёл на сервер", wantName))
 						}
 					}
 				}
+
 				// leave
 				for id, name := range prev {
 					if _, ok := cur[id]; !ok {
@@ -63,11 +68,13 @@ func (c *Client) StartScan(interval time.Duration, notify func(string)) error {
 						if wantName == "" {
 							wantName = name
 						}
+
 						if _, track := c.playersToDetect[id]; track {
 							notify(fmt.Sprintf("⬅ %s покинул сервер", wantName))
 						}
 					}
 				}
+
 				// обновляем снимок
 				c.lastPlayersScan = cur
 				c.mu.Unlock()
@@ -84,8 +91,10 @@ func (c *Client) Stop() {
 	c.mu.Lock()
 	if !c.running {
 		c.mu.Unlock()
+
 		return
 	}
+
 	close(c.stopCh)
 	c.running = false
 	c.mu.Unlock()
@@ -102,6 +111,7 @@ func (c *Client) IsOnline() map[string]bool {
 		_, online := c.lastPlayersScan[id]
 		status[name] = online
 	}
+
 	return status
 }
 
@@ -114,6 +124,7 @@ func (c *Client) FormatOnlineInfo(players map[string]bool) string {
 			offline = append(offline, name)
 		}
 	}
+
 	return fmt.Sprintf("Онлайн: %s | Оффлайн: %s",
 		strings.Join(online, ", "), strings.Join(offline, ", "))
 }
@@ -131,12 +142,14 @@ func (c *Client) fetchPlayers() (map[string]string, error) {
 	if c.etag != "" {
 		req.Header.Set("If-None-Match", c.etag)
 	}
+
 	c.mu.RUnlock()
 
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return nil, err
 	}
+
 	defer resp.Body.Close()
 
 	// 304 — ничего не изменилось, отдадим предыдущий снимок
@@ -146,10 +159,12 @@ func (c *Client) fetchPlayers() (map[string]string, error) {
 		for k, v := range c.lastPlayersScan {
 			prev[k] = v
 		}
+
 		c.mu.RUnlock()
 		log.Println("304 — ничего не изменилось")
 		return prev, nil
 	}
+
 	if resp.StatusCode/100 != 2 {
 		return nil, errors.New("bm api non-200")
 	}
@@ -187,6 +202,7 @@ func (c *Client) fetchPlayers() (map[string]string, error) {
 	for id, name := range c.playersToDetect {
 		watch[id] = name
 	}
+
 	c.mu.RUnlock()
 
 	curTracked := make(map[string]string)
@@ -195,5 +211,6 @@ func (c *Client) fetchPlayers() (map[string]string, error) {
 			curTracked[id] = realName
 		}
 	}
+
 	return curTracked, nil
 }

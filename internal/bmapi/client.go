@@ -57,6 +57,7 @@ func NewClient(token, server string, players ...Player) *Client {
 	for _, p := range players {
 		watch[p.ID] = p.Name
 	}
+
 	return &Client{
 		http:            &http.Client{Timeout: 10 * time.Second},
 		token:           token,
@@ -83,6 +84,7 @@ func NewClientFromConf(conf BMConf) *Client {
 func (c *Client) AddPlayer(players ...Player) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
 	for _, p := range players {
 		c.playersToDetect[p.ID] = p.Name
 	}
@@ -92,6 +94,7 @@ func (c *Client) AddPlayer(players ...Player) {
 func (c *Client) RemovePlayer(playerId string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
 	delete(c.playersToDetect, playerId)
 }
 
@@ -99,9 +102,11 @@ func (c *Client) RemovePlayer(playerId string) {
 func (c *Client) Players() map[string]string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
+
 	cp := make(map[string]string, len(c.lastPlayersScan))
 	for k, v := range c.lastPlayersScan {
 		cp[k] = v
 	}
+
 	return cp
 }

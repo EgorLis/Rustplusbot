@@ -81,9 +81,11 @@ func New(onUp, onDown func(), opts ...func(*Hook)) (*Hook, error) {
 		onDown: onDown,
 		onMute: nil,
 	}
+
 	for _, opt := range opts {
 		opt(h)
 	}
+
 	return h, nil
 }
 
@@ -101,9 +103,11 @@ func (h *Hook) Start() error {
 	curMu.Lock()
 	if current != nil {
 		curMu.Unlock()
+
 		h.started.Store(false)
 		return errors.New("[mediahook] another hook is already installed")
 	}
+
 	current = h
 	curMu.Unlock()
 
@@ -116,6 +120,7 @@ func (h *Hook) Close() error {
 	if !h.started.Load() {
 		return nil
 	}
+
 	h.started.Store(false)
 
 	// Снять хук
@@ -133,6 +138,7 @@ func (h *Hook) Close() error {
 	if current == h {
 		current = nil
 	}
+
 	curMu.Unlock()
 
 	return nil
@@ -156,6 +162,7 @@ func (h *Hook) run() {
 		h.Close()
 		return
 	}
+
 	h.hHook = ret
 	log.Println("[mediahook] installed")
 
@@ -188,20 +195,24 @@ func llKeyboardProc(nCode int, wParam uintptr, lParam uintptr) uintptr {
 				if h.onUp != nil {
 					h.onUp()
 				}
+
 				return 1 // блокируем изменение громкости
 			case VK_VOLUME_DOWN:
 				if h.onDown != nil {
 					h.onDown()
 				}
+
 				return 1
 			case VK_VOLUME_MUTE:
 				if h.onMute != nil {
 					h.onMute()
 				}
+
 				return 1
 			}
 		}
 	}
+
 	r, _, _ := procCallNextHookEx.Call(0, uintptr(nCode), wParam, lParam)
 	return r
 }
