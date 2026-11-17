@@ -20,6 +20,8 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+var version = "dev"
+
 func readConfig(path string, out any) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -70,12 +72,18 @@ func run() error {
 	flags := flag.NewFlagSet("rustplusbot", flag.ContinueOnError)
 	configDir := flags.String("config-dir", defaultDir, "configuration directory")
 	check := flags.Bool("check-connection", false, "verify Rust+ connection without hooks, chat messages or device actions")
+	showVersion := flags.Bool("version", false, "print the release version")
 	if err := flags.Parse(os.Args[1:]); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return nil
 		}
 
 		return err
+	}
+
+	if *showVersion {
+		fmt.Printf("RustPlusBot %s\n", version)
+		return nil
 	}
 
 	conf, err := filepath.Abs(*configDir)
