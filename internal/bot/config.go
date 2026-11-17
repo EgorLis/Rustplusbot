@@ -2,8 +2,10 @@ package bot
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 
 	"github.com/EgorLis/Rustplusbot/internal/bmapi"
@@ -31,7 +33,17 @@ type BotConfig struct {
 	BT2    *SwitchConf          `json:"bt2,omitempty"`
 	Alarms map[uint64]AlarmConf `json:"alarms"`
 	// Список отслеживаемых игроков для BM:
-	Players []PlayerConf `json:"players"`
+	Players     []PlayerConf `json:"players"`
+	Death       *DeathConfig `json:"death,omitempty"`
+	AlarmsMuted bool         `json:"alarms_muted,omitempty"`
+	MapWatch    []string     `json:"map_watch,omitempty"`
+}
+
+type DeathConfig struct {
+	SteamID  string `json:"steam_id"`
+	Sound    string `json:"sound"`
+	Interval int    `json:"interval_sec"`
+	Enabled  bool   `json:"enabled"`
 }
 
 type configStore struct {
@@ -72,6 +84,18 @@ func (bot *RustPlusBot) UseConfig(path string) error {
 		bot.bm.AddPlayer(ps...)
 	}
 
+	bot.amMu.Lock()
+	bot.amIsMuted = bot.cfg.data.AlarmsMuted
+	bot.amMu.Unlock()
+
+	if death := bot.cfg.data.Death; death != nil && death.SteamID != "" {
+		id, err := strconv.ParseUint(death.SteamID, 10, 64)
+		if err != nil {
+			return fmt.Errorf("invalid death-watch SteamID")
+		}
+		bot.SetCheckPlayerDeath(id, &death.Sound)
+	}
+
 	return nil
 }
 
@@ -107,7 +131,24 @@ func (cs *configStore) Save() error {
 		return err
 	}
 
-	return os.WriteFile(cs.path, b, 0644)
+	return atomicConfigWrite(cs.path, b)
+}
+
+func atomicConfigWrite(path string, data []byte) error {
+	f, err := os.CreateTemp(filepath.Dir(path), ".botconfig-*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(f.Name())
+
+	if _, err := f.Write(data); err != nil {
+		f.Close()
+		return err
+	}
+	if err := f.Close(); err != nil {
+		return err
+	}
+	return os.Rename(f.Name(), path)
 }
 
 func newConfigStore(path string) *configStore {

@@ -122,13 +122,32 @@ func (rp *RustPlus) readMessages(conn *websocket.Conn) error {
 			continue
 		}
 
+		// Some servers acknowledge a chat send by echoing it without a response.
+		if chat := msg.GetBroadcast().GetTeamMessage().GetMessage(); chat != nil && chat.GetSteamId() == rp.playerID {
+			rp.mu.Lock()
+			var matched uint32
+			for seq, text := range rp.teamSends {
+				if text == chat.GetMessage() && (matched == 0 || seq < matched) {
+					matched = seq
+				}
+			}
+			cb := rp.cbs[matched]
+			delete(rp.cbs, matched)
+			delete(rp.teamSends, matched)
+			rp.mu.Unlock()
+			if cb != nil {
+				cb(&AppMessage{Response: &AppResponse{Seq: proto.Uint32(matched), Success: &AppSuccess{}}})
+			}
+		}
+
 		if resp := msg.GetResponse(); resp != nil && resp.Seq != nil {
 			rp.mu.Lock()
 			cb := rp.cbs[resp.GetSeq()]
 			delete(rp.cbs, resp.GetSeq())
+			delete(rp.teamSends, resp.GetSeq())
 			rp.mu.Unlock()
 
-			if cb != nil && cb(&msg) {
+			if cb != nil && cb(&msg) && msg.GetBroadcast() == nil {
 				continue
 			}
 		}
@@ -144,6 +163,7 @@ func (rp *RustPlus) failPendingCallbacks(err error) {
 	rp.mu.Lock()
 	pending := rp.cbs
 	rp.cbs = make(map[uint32]func(*AppMessage) bool)
+	rp.teamSends = make(map[uint32]string)
 	rp.mu.Unlock()
 
 	for seq, cb := range pending {

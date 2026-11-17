@@ -18,7 +18,9 @@ func (bot *RustPlusBot) initAlarmByID(id uint64) {
 		info := m.GetResponse().GetEntityInfo()
 		if info != nil {
 			// безопасно достаём имя по id на момент коллбека
+			bot.commandMu.Lock()
 			a, ok := bot.alarms[id]
+			bot.commandMu.Unlock()
 			name := fmt.Sprintf("alarm_%d", id)
 			if ok {
 				name = a.name

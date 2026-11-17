@@ -98,7 +98,7 @@ func (c *Client) RemovePlayer(playerId string) {
 	delete(c.playersToDetect, playerId)
 }
 
-// Players возвращает список отслеживаемых игроков в сети на момент последнего скана
+// Players returns every online server player from the most recent scan.
 func (c *Client) Players() map[string]string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -109,4 +109,20 @@ func (c *Client) Players() map[string]string {
 	}
 
 	return cp
+}
+
+func (c *Client) SetTrackedPlayers(players []Player) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.playersToDetect = make(map[string]string, len(players))
+	for _, player := range players {
+		c.playersToDetect[player.ID] = player.Name
+	}
+}
+
+// An on-demand UI query must not advance the notification scanner's baseline or ETag.
+func (c *Client) OnlinePlayers() (map[string]string, error) {
+	client := NewClient(c.token, c.server)
+	return client.fetchPlayers()
 }

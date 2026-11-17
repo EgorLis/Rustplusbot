@@ -21,6 +21,10 @@ type playerDeath struct {
 }
 
 func (bot *RustPlusBot) StartDeathWatch(every time.Duration) error {
+	if every <= 0 {
+		return fmt.Errorf("death-watch interval must be positive")
+	}
+
 	bot.dwMu.Lock()
 	defer bot.dwMu.Unlock()
 
@@ -29,9 +33,10 @@ func (bot *RustPlusBot) StartDeathWatch(every time.Duration) error {
 	}
 
 	if bot.dwRunning {
-		// можно обновить интервал на лету
-		bot.dwEvery = every
-		return nil
+		if bot.dwEvery == every {
+			return nil
+		}
+		bot.dwCancel()
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -39,7 +44,7 @@ func (bot *RustPlusBot) StartDeathWatch(every time.Duration) error {
 	bot.dwEvery = every
 	bot.dwRunning = true
 
-	go bot.deathPollLoop(ctx) // фоновая горутина
+	go bot.deathPollLoop(ctx, every)
 	return nil
 }
 
@@ -62,7 +67,9 @@ func (bot *RustPlusBot) checkDeath(ti *rpclient.AppTeamInfo, say func(string)) {
 
 	log.Println("[death] check death...")
 
+	bot.dwMu.Lock()
 	pd := bot.checkPlayerDeath
+	bot.dwMu.Unlock()
 	if pd == nil {
 		return
 	}
@@ -130,9 +137,9 @@ func (bot *RustPlusBot) checkDeath(ti *rpclient.AppTeamInfo, say func(string)) {
 }
 
 // deathPollLoop — живёт всё время, пока не вызовут StopDeathWatch().
-func (bot *RustPlusBot) deathPollLoop(ctx context.Context) {
+func (bot *RustPlusBot) deathPollLoop(ctx context.Context, every time.Duration) {
 	// один тикер — ваш интервал опроса
-	t := time.NewTicker(bot.dwEvery)
+	t := time.NewTicker(every)
 	defer t.Stop()
 
 	// чтобы не спамить в разрыв соединения
@@ -151,7 +158,11 @@ func (bot *RustPlusBot) deathPollLoop(ctx context.Context) {
 			// 1) нет соединения? просто «спим» и ждём следующего тика,
 			//    можно добавить небольшой прогрессивный backoff чтобы не дёргать CPU
 			if !bot.rpc.IsConnected() {
-				time.Sleep(notConnectedBackoff)
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(notConnectedBackoff):
+				}
 				if notConnectedBackoff < maxBackoff {
 					notConnectedBackoff *= 2
 					if notConnectedBackoff > maxBackoff {
@@ -175,6 +186,9 @@ func (bot *RustPlusBot) deathPollLoop(ctx context.Context) {
 			}
 
 			ti := resp.GetTeamInfo()
+			if ctx.Err() != nil {
+				return
+			}
 			if ti == nil {
 				continue
 			}

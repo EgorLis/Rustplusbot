@@ -17,6 +17,7 @@ import (
 	"github.com/EgorLis/Rustplusbot/internal/bmapi"
 	"github.com/EgorLis/Rustplusbot/internal/bot"
 	"github.com/EgorLis/Rustplusbot/internal/rpclient"
+	"github.com/EgorLis/Rustplusbot/internal/webui"
 	"golang.org/x/sys/windows"
 )
 
@@ -73,6 +74,9 @@ func run() error {
 	configDir := flags.String("config-dir", defaultDir, "configuration directory")
 	check := flags.Bool("check-connection", false, "verify Rust+ connection without hooks, chat messages or device actions")
 	showVersion := flags.Bool("version", false, "print the release version")
+	ui := flags.Bool("ui", false, "open the local web control server")
+	stopUI := flags.Bool("stop-ui", false, "stop the local web panel and its bot")
+	uiPort := flags.Int("ui-port", 8787, "local web UI port (0 selects a free port)")
 	if err := flags.Parse(os.Args[1:]); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return nil
@@ -84,6 +88,14 @@ func run() error {
 	if *showVersion {
 		fmt.Printf("RustPlusBot %s\n", version)
 		return nil
+	}
+
+	if *stopUI {
+		if *ui || *check {
+			return errors.New("--stop-ui cannot be combined with --ui or --check-connection")
+		}
+
+		return webui.StopLocal(context.Background(), *uiPort)
 	}
 
 	conf, err := filepath.Abs(*configDir)
@@ -112,6 +124,17 @@ func run() error {
 		logFile.Close()
 	}()
 
+	if *ui {
+		if *check {
+			return fmt.Errorf("--ui and --check-connection cannot be combined")
+		}
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		return webui.Run(ctx, conf, *uiPort, func(path string) (webui.Runtime, error) {
+			return configureBot(path, false)
+		})
+	}
+
 	// Log errors before closing the file, including startup and config errors.
 	return runBot(conf, *check)
 }
@@ -125,36 +148,9 @@ func runBot(conf string, check bool) (result error) {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	var rpcfg rpclient.RustPlusConfig
-	if err := readConfig(filepath.Join(conf, "rpconfig.json"), &rpcfg); err != nil {
+	b, err := configureBot(conf, check)
+	if err != nil {
 		return err
-	}
-
-	if rpcfg.AuthTokenFile != "" && !filepath.IsAbs(rpcfg.AuthTokenFile) {
-		rpcfg.AuthTokenFile = filepath.Join(conf, rpcfg.AuthTokenFile)
-	}
-
-	b := bot.New()
-	if err := b.SetRustPlusClient(rpcfg); err != nil {
-		return err
-	}
-
-	if !check {
-		var bmcfg bmapi.BMConf
-		if err := readConfig(filepath.Join(conf, "bmconfig.json"), &bmcfg); err != nil {
-			return err
-		}
-
-		b.SetBattleMetrics(bmcfg)
-		if err := b.SetMediaHook(); err != nil {
-			return fmt.Errorf("initialize media hook: %w", err)
-		}
-
-		sound := "3.mp3"
-		b.SetCheckPlayerDeath(rpcfg.PlayerID, &sound)
-		if err := b.UseConfig(filepath.Join(conf, "botconfig.json")); err != nil {
-			return err
-		}
 	}
 
 	if err := b.StartContext(ctx); err != nil {
@@ -171,4 +167,45 @@ func runBot(conf string, check bool) (result error) {
 	log.Println("Bot is running. Press Ctrl+C to stop.")
 	<-ctx.Done()
 	return nil
+}
+
+func configureBot(conf string, check bool) (*bot.RustPlusBot, error) {
+	var rpcfg rpclient.RustPlusConfig
+	if err := readConfig(filepath.Join(conf, "rpconfig.json"), &rpcfg); err != nil {
+		return nil, err
+	}
+
+	if rpcfg.AuthTokenFile != "" && !filepath.IsAbs(rpcfg.AuthTokenFile) {
+		rpcfg.AuthTokenFile = filepath.Join(conf, rpcfg.AuthTokenFile)
+	}
+
+	b := bot.New()
+	if err := b.SetRustPlusClient(rpcfg); err != nil {
+		return nil, err
+	}
+
+	if !check {
+		var bmcfg bmapi.BMConf
+		if err := readConfig(filepath.Join(conf, "bmconfig.json"), &bmcfg); err != nil {
+			return nil, err
+		}
+
+		if bmcfg.Server != "" {
+			if bmcfg.Token == "" {
+				return nil, fmt.Errorf("BattleMetrics API token is missing")
+			}
+			b.SetBattleMetrics(bmcfg)
+		}
+		if err := b.SetMediaHook(); err != nil {
+			return nil, fmt.Errorf("initialize media hook: %w", err)
+		}
+
+		sound := "3.mp3"
+		b.SetCheckPlayerDeath(rpcfg.PlayerID, &sound)
+		if err := b.UseConfig(filepath.Join(conf, "botconfig.json")); err != nil {
+			return nil, err
+		}
+	}
+
+	return b, nil
 }

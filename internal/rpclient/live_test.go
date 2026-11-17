@@ -64,3 +64,55 @@ func TestLiveCompanionConnection(t *testing.T) {
 	}
 	t.Log("Reconnected and verified a fresh team response")
 }
+
+// This diagnostic reads team membership and chat availability; it never sends a message.
+func TestLiveTeamChatReadOnly(t *testing.T) {
+	file := os.Getenv("RUSTPLUS_LIVE_CONFIG")
+	if file == "" {
+		t.Skip("set RUSTPLUS_LIVE_CONFIG for a read-only live diagnostic")
+	}
+	data, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cfg RustPlusConfig
+	if json.Unmarshal(data, &cfg) != nil {
+		t.Fatal("invalid config JSON")
+	}
+	client, err := NewFromConfig(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	defer client.Disconnect()
+	if err := client.Connect(ctx); err != nil {
+		t.Fatal(err)
+	}
+	team, err := client.SendRequestAsync(&AppRequest{GetTeamInfo: &AppEmpty{}}, 5*time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("GetTeamInfo: leader=%d; members=%d", team.GetTeamInfo().GetLeaderSteamId(), len(team.GetTeamInfo().GetMembers()))
+	chat, err := client.SendRequestAsync(&AppRequest{GetTeamChat: &AppEmpty{}}, 5*time.Second)
+	if err != nil {
+		t.Logf("GetTeamChat unavailable: %v", err)
+		return
+	}
+	t.Logf("GetTeamChat: messages=%d", len(chat.GetTeamChat().GetMessages()))
+	markers, markerError := client.SendRequestAsync(&AppRequest{GetMapMarkers: &AppEmpty{}}, 5*time.Second)
+	if markerError != nil {
+		t.Logf("GetMapMarkers unavailable: %v", markerError)
+	} else {
+		counts := map[AppMarkerType]int{}
+		for _, marker := range markers.GetMapMarkers().GetMarkers() {
+			counts[marker.GetType()]++
+		}
+		t.Logf("GetMapMarkers: total=%d; types=%v", len(markers.GetMapMarkers().GetMarkers()), counts)
+	}
+	for _, message := range chat.GetTeamChat().GetMessages() {
+		if len(message.GetMessage()) > 0 && message.GetMessage()[0] == '!' {
+			t.Logf("Command in chat history: %q", message.GetMessage())
+		}
+	}
+}

@@ -22,6 +22,7 @@ func (c *Client) StartScan(interval time.Duration, notify func(string)) error {
 
 	c.running = true
 	c.stopCh = make(chan struct{})
+	stopCh := c.stopCh
 	c.mu.Unlock()
 
 	// стартовая инициализация — без уведомлений
@@ -45,6 +46,7 @@ func (c *Client) StartScan(interval time.Duration, notify func(string)) error {
 					continue
 				}
 
+				var notifications []string
 				c.mu.Lock()
 				prev := c.lastPlayersScan
 				// join
@@ -56,7 +58,7 @@ func (c *Client) StartScan(interval time.Duration, notify func(string)) error {
 								wantName = name
 							}
 
-							notify(fmt.Sprintf("➡ %s вошёл на сервер", wantName))
+							notifications = append(notifications, fmt.Sprintf("➡ %s вошёл на сервер", wantName))
 						}
 					}
 				}
@@ -70,7 +72,7 @@ func (c *Client) StartScan(interval time.Duration, notify func(string)) error {
 						}
 
 						if _, track := c.playersToDetect[id]; track {
-							notify(fmt.Sprintf("⬅ %s покинул сервер", wantName))
+							notifications = append(notifications, fmt.Sprintf("⬅ %s покинул сервер", wantName))
 						}
 					}
 				}
@@ -78,8 +80,13 @@ func (c *Client) StartScan(interval time.Duration, notify func(string)) error {
 				// обновляем снимок
 				c.lastPlayersScan = cur
 				c.mu.Unlock()
+				for _, message := range notifications {
+					if notify != nil {
+						notify(message)
+					}
+				}
 
-			case <-c.stopCh:
+			case <-stopCh:
 				return
 			}
 		}
@@ -129,8 +136,7 @@ func (c *Client) FormatOnlineInfo(players map[string]bool) string {
 		strings.Join(online, ", "), strings.Join(offline, ", "))
 }
 
-// fetchPlayers — получает текущих игроков, фильтруя только отслеживаемых.
-// Возвращает map[id]name только по тем, кто есть и в онлайне, и в watch-листе.
+// fetchPlayers gets every currently online server player.
 // Использует ETag для экономии.
 func (c *Client) fetchPlayers() (map[string]string, error) {
 	req, _ := http.NewRequest("GET",
@@ -196,21 +202,5 @@ func (c *Client) fetchPlayers() (map[string]string, error) {
 
 	log.Println("[online] ======================================")
 
-	// фильтруем только отслеживаемых
-	c.mu.RLock()
-	watch := make(map[string]string, len(c.playersToDetect))
-	for id, name := range c.playersToDetect {
-		watch[id] = name
-	}
-
-	c.mu.RUnlock()
-
-	curTracked := make(map[string]string)
-	for id, realName := range names {
-		if _, track := watch[id]; track {
-			curTracked[id] = realName
-		}
-	}
-
-	return curTracked, nil
+	return names, nil
 }

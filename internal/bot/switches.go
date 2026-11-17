@@ -13,6 +13,7 @@ type smartSwitch struct {
 	id    uint64
 	name  string
 	state bool
+	known bool
 }
 
 func (bot *RustPlusBot) initSwitch(sw *smartSwitch) {
@@ -21,6 +22,9 @@ func (bot *RustPlusBot) initSwitch(sw *smartSwitch) {
 	}
 
 	id := sw.id
+	sw.Lock()
+	sw.known = false
+	sw.Unlock()
 	_ = bot.rpc.GetEntityInfo(id, func(m *rpclient.AppMessage) bool {
 		if info := m.GetResponse().GetEntityInfo(); info != nil {
 			val := false
@@ -28,9 +32,10 @@ func (bot *RustPlusBot) initSwitch(sw *smartSwitch) {
 				val = p.GetValue()
 			}
 
-			bot.mu.Lock()
+			sw.Lock()
 			sw.state = val
-			bot.mu.Unlock()
+			sw.known = true
+			sw.Unlock()
 
 			log.Printf("Switch init %s (%d): value=%v\n", sw.name, id, val)
 		}
@@ -40,6 +45,7 @@ func (bot *RustPlusBot) initSwitch(sw *smartSwitch) {
 }
 
 func (bot *RustPlusBot) turnSwitch(number int) string {
+	bot.commandMu.Lock()
 	var sw *smartSwitch
 	switch number {
 	case 1:
@@ -47,8 +53,10 @@ func (bot *RustPlusBot) turnSwitch(number int) string {
 	case 2:
 		sw = bot.bt2switch
 	default:
+		bot.commandMu.Unlock()
 		return "Неверные данные"
 	}
+	bot.commandMu.Unlock()
 
 	if sw == nil {
 		return "Кнопка не инициализирована!"

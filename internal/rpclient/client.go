@@ -40,6 +40,8 @@ type RustPlus struct {
 	mu          sync.Mutex
 	cbs         map[uint32]func(*AppMessage) bool
 	wmu         sync.Mutex
+	chatError   string
+	teamSends   map[uint32]string
 
 	OnConnecting   func()
 	OnConnected    func()
@@ -57,11 +59,27 @@ func New(server string, port int, playerID uint64, playerToken int32, useProxy b
 		playerToken: playerToken,
 		useProxy:    useProxy,
 		cbs:         make(map[uint32]func(*AppMessage) bool),
+		teamSends:   make(map[uint32]string),
 	}
 }
 
 func (rp *RustPlus) nextSeq() uint32 {
 	return atomic.AddUint32(&rp.seq, 1)
+}
+
+func (rp *RustPlus) TeamChatError() string {
+	rp.mu.Lock()
+	defer rp.mu.Unlock()
+	return rp.chatError
+}
+
+func (rp *RustPlus) setTeamChatError(err error) {
+	rp.mu.Lock()
+	rp.chatError = ""
+	if err != nil {
+		rp.chatError = err.Error()
+	}
+	rp.mu.Unlock()
 }
 
 // Connect validates a Rust+ reply before publishing the connection.
@@ -167,6 +185,9 @@ func (rp *RustPlus) sendRequestOn(conn *websocket.Conn, req *AppRequest, cb func
 	if cb != nil {
 		rp.mu.Lock()
 		rp.cbs[seq] = cb
+		if req.SendTeamMessage != nil {
+			rp.teamSends[seq] = req.SendTeamMessage.GetMessage()
+		}
 		rp.mu.Unlock()
 	}
 
@@ -192,6 +213,7 @@ func (rp *RustPlus) sendRequestOn(conn *websocket.Conn, req *AppRequest, cb func
 func (rp *RustPlus) removeCallback(seq uint32) {
 	rp.mu.Lock()
 	delete(rp.cbs, seq)
+	delete(rp.teamSends, seq)
 	rp.mu.Unlock()
 }
 

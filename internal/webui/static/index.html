@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>RustPlusBot · Управление</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+  <script src="/map.js" defer></script>
+</head>
+<body>
+  <aside>
+    <a class="brand" href="/"><span class="logo">R+</span><span>RustPlusBot<small>ЛОКАЛЬНАЯ ПАНЕЛЬ</small></span></a>
+    <nav aria-label="Разделы">
+      <button data-page="overview" class="active">◈ <span>Обзор</span></button>
+      <button data-page="players">♧ <span>Игроки</span></button>
+      <button data-page="map">⌖ <span>Карта</span></button>
+      <button data-page="devices">▣ <span>Устройства</span></button>
+      <button data-page="notifications">◇ <span>Уведомления Rust+</span></button>
+      <button data-page="settings">⚙ <span>Настройки</span></button>
+    </nav>
+    <div class="sidebar-note"><span class="dot"></span> Только на этом компьютере<small>Настройки сохраняются в JSON<br>и доступны после перезапуска.</small></div>
+  </aside>
+  <main>
+    <header>
+      <div><div class="eyebrow">ПАНЕЛЬ УПРАВЛЕНИЯ</div><h1 id="page-title">Обзор</h1></div>
+      <div class="toolbar"><span id="status" class="badge">Остановлен</span><button id="stop" class="secondary">Остановить</button><button id="start" class="primary">Запустить бота</button></div>
+    </header>
+    <div id="notice" class="notice hidden" role="status" aria-live="polite"></div>
+
+    <section id="overview" class="page">
+      <div class="server-hero"><div><div class="eyebrow">ТЕКУЩИЙ СЕРВЕР</div><h2 id="server-name">Подключение не установлено</h2><p id="connection-note">Настройте сервер, затем запустите бота.</p></div><span class="hero-mark">RUST<span>+</span></span></div>
+      <div class="stats"><article><small>На сервере · BattleMetrics</small><strong id="online-count">—</strong><span>Откройте «Игроки» для обновления</span></article><article><small>Отслеживаемые игроки</small><strong id="tracked-count">0</strong><span>Уведомления о входе и выходе</span></article><article><small>Сохранённые устройства</small><strong id="device-count">0</strong><span>Переключатели и алармы</span></article></div>
+      <article class="card">
+        <div class="card-heading"><div><h2>Death-watch</h2><p>Уведомление и звук при смерти выбранного участника команды.</p></div><span id="death-status" class="badge">Выключен</span></div>
+        <form id="death-form">
+          <div class="grid three"><label>SteamID<input name="id" inputmode="numeric" placeholder="7656119…" required></label><label>Интервал, секунд<input name="interval" type="number" min="1" max="3600" value="15" required></label><label>Звук<select name="sound" class="sound-select"><option value="none">Без звука</option></select></label></div>
+          <div class="form-footer"><label class="check"><input name="enabled" type="checkbox"> Отслеживать смерть</label><button class="primary" type="submit">Сохранить и применить</button></div>
+        </form>
+        <p id="death-feedback" class="hidden" role="status" aria-live="polite"></p>
+        <details><summary>Выбрать игрока из Rust+ команды</summary><p>Кнопка «Отслеживать» сразу сохраняет выбранного игрока и включает death-watch с указанным интервалом и звуком.</p><button id="refresh-team" class="secondary small">Обновить состав команды</button><div id="team-list" class="list"><p class="empty">Список доступен после подключения.</p></div></details>
+      </article>
+      <article class="card"><div class="card-heading"><div><h2>Журнал работы</h2><p>Подключение, команды, уведомления и ошибки текущего запуска.</p></div><button id="copy-logs" class="secondary small">Копировать</button></div><pre id="logs" tabindex="0">Журнал пока пуст.</pre></article>
+    </section>
+
+    <section id="players" class="page hidden">
+      <div class="split">
+        <article class="card"><div class="card-heading"><div><h2>Игроки на сервере</h2><p>Данные BattleMetrics. Нажмите +, чтобы отслеживать игрока.</p></div><button id="refresh-players" class="secondary small">Обновить</button></div><input id="player-search" placeholder="Поиск по имени или ID" aria-label="Поиск игроков"><div id="server-players" class="list"><p class="empty">Запустите бота и обновите список.</p></div><small id="players-updated" class="muted"></small></article>
+        <article class="card"><div class="card-heading"><div><h2>Отслеживаемые игроки</h2><p>Изменения сразу применяются и сохраняются.</p></div><span id="tracked-total" class="counter">0</span></div><div id="tracked-players" class="list"></div><details><summary>Добавить игрока по BattleMetrics ID</summary><form id="track-form"><div class="grid"><label>ID игрока<input name="id" inputmode="numeric" required></label><label>Имя<input name="name" placeholder="Необязательно"></label></div><button class="primary" type="submit">Добавить в отслеживание</button></form></details></article>
+      </div>
+    </section>
+
+    <section id="map" class="page hidden">
+      <article class="card"><div class="card-heading"><div><h2>Карта сервера</h2><p>Колесо мыши — масштаб, перетаскивание — перемещение. Позиции команды обновляются каждые 5 секунд.</p></div><button id="load-map" class="primary">Загрузить карту Rust+</button></div><p id="map-message">Подключите бота, затем загрузите карту.</p><div class="map-toolbar"><button id="map-zoom-in" class="secondary small" aria-label="Приблизить карту">+</button><button id="map-zoom-out" class="secondary small" aria-label="Отдалить карту">−</button><button id="map-reset" class="secondary small">Вся карта</button><label class="check"><input id="map-grid-enabled" type="checkbox" checked> Сетка</label><span id="map-grid-position" class="muted" aria-live="off"></span><span class="muted">● Команда · ✕ Место смерти</span></div><div class="map-canvas"><svg id="rust-map" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" role="img" aria-label="Карта Rust+ с игроками и метками смерти"><image id="map-image" x="0" y="0"/><g id="map-grid" pointer-events="none"></g><g id="map-markers"></g></svg></div></article>
+      <div class="split"><article class="card"><h2>Метки смерти игроков команды</h2><p>Выберите участников, смерти которых нужно отмечать. Игрок из включённого death-watch отслеживается также автоматически. Это SteamID из Rust+, а не ID BattleMetrics.</p><div id="map-team" class="list"><p class="empty">Состав команды появится после подключения.</p></div></article><article class="card"><h2>История смертей</h2><p>Метки собираются, пока бот подключён. Если смерть произошла между опросами, позиция может быть приблизительной. Уже мёртвые при подключении игроки не считаются новой смертью.</p><div id="map-deaths" class="list"></div></article></div>
+    </section>
+
+    <section id="devices" class="page hidden">
+      <div class="section-intro"><p>Настройте BT1/BT2 и реакции на Smart Alarm. Для переноса ID используйте уведомление привязки Rust+.</p><button id="import-device" class="secondary">Импорт уведомления</button></div>
+      <div class="split">
+        <article class="card"><div class="card-heading"><div><h2>Переключатель BT1</h2><p>Кнопка увеличения громкости</p></div><span id="switch-state-1" class="badge">Не привязан</span></div><form id="switch-form-1" data-slot="1"><label>ID устройства<input name="id" inputmode="numeric" required></label><label>Название<input name="name" required></label><div class="form-footer"><button class="primary" type="submit">Сохранить</button><button type="button" class="text-button unbind" data-slot="1">Убрать привязку</button></div></form><div class="switch-actions"><button data-power="on" data-slot="1" class="secondary">Включить</button><button data-power="off" data-slot="1" class="secondary">Выключить</button></div></article>
+        <article class="card"><div class="card-heading"><div><h2>Переключатель BT2</h2><p>Кнопка уменьшения громкости</p></div><span id="switch-state-2" class="badge">Не привязан</span></div><form id="switch-form-2" data-slot="2"><label>ID устройства<input name="id" inputmode="numeric" required></label><label>Название<input name="name" required></label><div class="form-footer"><button class="primary" type="submit">Сохранить</button><button type="button" class="text-button unbind" data-slot="2">Убрать привязку</button></div></form><div class="switch-actions"><button data-power="on" data-slot="2" class="secondary">Включить</button><button data-power="off" data-slot="2" class="secondary">Выключить</button></div></article>
+      </div>
+      <div class="split">
+        <article class="card"><div class="card-heading"><div><h2>Smart Alarm</h2><p>Сообщение в чат и звук при срабатывании.</p></div><button id="mute-alarms" class="secondary small">Выключить звуки</button></div><div id="alarm-list" class="list"></div></article>
+        <article class="card"><h2>Добавить или изменить аларм</h2><form id="alarm-form"><div class="grid"><label>ID устройства<input name="id" inputmode="numeric" required></label><label>Название<input name="name" required></label></div><label>Сообщение в чат<input name="message" placeholder="Например: рейд на основной базе"></label><label>Звук<select name="sound" class="sound-select"><option value="none">Без звука</option></select></label><div class="form-footer"><button class="primary" type="submit">Сохранить аларм</button><button class="text-button" type="reset">Очистить форму</button></div></form></article>
+      </div>
+      <article class="card"><h2>Проверить устройство</h2><p>Rust+ не предоставляет список всех привязанных устройств. Можно проверить известный ID: тип, состояние и параметры хранилища.</p><form id="probe-form" class="inline-form"><input name="id" inputmode="numeric" placeholder="ID устройства" required aria-label="ID устройства"><button class="secondary" type="submit">Запросить состояние</button></form><pre id="probe-result" class="hidden"></pre></article>
+    </section>
+
+    <section id="notifications" class="page hidden">
+      <article class="card"><div class="card-heading"><div><h2>Привязка без копирования ID</h2><p>Запустите слушатель и привяжите сервер или устройство к Rust+ в игре. Новая привязка появится здесь автоматически.</p></div><span id="listener-status" class="badge">Остановлен</span></div><div class="toolbar"><button id="listener-start" class="primary">Слушать уведомления</button><button id="listener-stop" class="secondary">Остановить слушатель</button></div><p id="listener-error" class="form-error"></p><small class="muted">Используется сохранённая регистрация Rust+. Слушатель работает отдельно от бота и восстанавливается при следующем запуске панели. Отдельную команду fcm-listen на это время остановите.</small></article>
+      <div id="notification-list"><p class="empty">Пока нет уведомлений привязки.</p></div>
+    </section>
+
+    <section id="settings" class="page hidden">
+      <article class="card"><div class="card-heading"><div><h2>Подключение к серверу</h2><p>Смена настроек переподключит работающего бота. Остальные изменения применяются без переподключения.</p></div><button id="import-server" class="secondary small">Заполнить из уведомления</button></div>
+        <form id="settings-form">
+          <div class="grid"><label>UUID сервера Rust+<input name="server_id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" required></label><label>Ваш SteamID<input name="player_id" inputmode="numeric" required></label></div>
+          <div class="grid"><label>Player token<input name="player_token" type="password" autocomplete="new-password" placeholder="Токен из уведомления привязки"><small id="player-token-note">При смене сервера нужен новый токен.</small></label><label>Файл авторизации Rust+<input name="auth_token_file" placeholder="По умолчанию: rustplus.config.json в домашней папке"><small>Относительный путь считается от папки conf.</small></label></div>
+          <div class="divider"></div><h3>BattleMetrics</h3><p>Нужен для списка всех игроков и уведомлений о входе/выходе. Можно оставить ID сервера пустым.</p>
+          <div class="grid"><label>ID сервера BattleMetrics<input name="bm_server" inputmode="numeric" placeholder="31330805"></label><label>API-токен<input name="bm_token" type="password" autocomplete="new-password"><small id="bm-token-note">Токен хранится только в вашем конфиге.</small></label></div>
+          <div class="form-footer"><span class="muted">Пустое поле токена сохраняет существующий токен.</span><button class="primary" type="submit">Сохранить и применить</button></div>
+        </form>
+      </article>
+      <article class="card"><h2>Сохранение и управление</h2><p>Все формы сохраняют изменения автоматически после нажатия своей кнопки. Чат-команды продолжают работать. Изменения устройств и игроков доступны и при остановленном боте.</p><button id="save-all" class="secondary">Сохранить настройки бота</button></article>
+    </section>
+    <footer>RustPlusBot · ветка разработки веб-интерфейса <span>Локальное управление / без внешних сервисов интерфейса</span></footer>
+  </main>
+
+  <dialog id="pairing-dialog"><form id="pairing-form"><div class="card-heading"><h2>Импорт уведомления Rust+</h2><button type="button" id="close-pairing" class="text-button" aria-label="Закрыть">✕</button></div><p>В игре нажмите «Привязать» на сервере или устройстве. Вставьте JSON из поля body уведомления, полученного через fcm-listen. Поддерживается также JSON всего уведомления.</p><label>JSON уведомления<textarea name="payload" rows="9" required placeholder='{"type":"server", "id":"…", "playerId":"…", "playerToken":"…"}'></textarea></label><small>Импорт заполнит форму. Проверьте поля и нажмите «Сохранить».</small><div class="form-footer"><button type="button" id="cancel-pairing" class="secondary">Отмена</button><button class="primary" type="submit">Заполнить форму</button></div></form></dialog>
+</body>
+</html>

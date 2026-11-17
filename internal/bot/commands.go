@@ -14,6 +14,9 @@ import (
 var reArg = regexp.MustCompile(`"([^"]*)"|(\S+)`)
 
 func (bot *RustPlusBot) HandleCommand(text string) error {
+	bot.commandMu.Lock()
+	defer bot.commandMu.Unlock()
+
 	fields := splitArgs(text)
 	if len(fields) == 0 {
 		return nil

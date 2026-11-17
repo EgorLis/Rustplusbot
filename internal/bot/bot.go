@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strings"
 	"sync"
 	"time"
 
@@ -15,6 +14,13 @@ import (
 )
 
 type RustPlusBot struct {
+	commandMu sync.Mutex
+	chatMu    sync.Mutex
+	chatSeen  map[string]bool
+	chatOrder []string
+	chatQueue chan *rpclient.AppTeamMessage
+	chatPrime chan struct{}
+
 	bm        *bmapi.Client
 	rpc       *rpclient.RustPlus
 	mediaHook *mediahook.Hook
@@ -48,11 +54,17 @@ type RustPlusBot struct {
 
 func New() *RustPlusBot {
 	return &RustPlusBot{
-		alarms: make(map[uint64]smartAlarm),
+		alarms:    make(map[uint64]smartAlarm),
+		chatSeen:  make(map[string]bool),
+		chatQueue: make(chan *rpclient.AppTeamMessage, 128),
+		chatPrime: make(chan struct{}, 1),
 	}
 }
 
 func (bot *RustPlusBot) SetCheckPlayerDeath(steamID uint64, sound *string) {
+	bot.dwMu.Lock()
+	defer bot.dwMu.Unlock()
+
 	death := playerDeath{steamID: steamID}
 	bot.checkPlayerDeath = &death
 	if sound != nil {
@@ -77,6 +89,10 @@ func (bot *RustPlusBot) SetRustPlusClient(cfg rpclient.RustPlusConfig) error {
 		log.Printf("Rust+: connected to %q; server verified", bot.rpc.ServerInfo().GetName())
 
 		go bot.reinitDevices()
+		select {
+		case bot.chatPrime <- struct{}{}:
+		default:
+		}
 	}
 
 	bot.rpc.OnDisconnected = func() {
@@ -95,27 +111,15 @@ func (bot *RustPlusBot) SetRustPlusClient(cfg rpclient.RustPlusConfig) error {
 
 		// --- чат-команды ---
 		if chat := b.GetTeamMessage(); chat != nil {
-			message := chat.GetMessage()
-			text := strings.TrimSpace(message.GetMessage())
-			if strings.HasPrefix(text, "[bot]") {
-				return
-			}
-
-			playerName := message.GetName()
-			log.Printf("[%s] %s", playerName, text)
-			if strings.HasPrefix(text, "!") {
-				if err := bot.HandleCommand(text); err != nil {
-					bot.rpc.BotSay(fmt.Sprintf("err: %v", err))
-				}
-
-				return
-			}
+			bot.receiveChat(chat.GetMessage(), false)
 		}
 
 		// --- smart alarm ---
 		if ec := b.GetEntityChanged(); ec != nil {
 			id := ec.GetEntityId()
+			bot.commandMu.Lock()
 			alarm, watched := bot.alarms[id]
+			bot.commandMu.Unlock()
 			if !watched {
 				return
 			}
@@ -123,7 +127,11 @@ func (bot *RustPlusBot) SetRustPlusClient(cfg rpclient.RustPlusConfig) error {
 			if p := ec.GetPayload(); p != nil && p.Value != nil && p.GetValue() {
 				text := fmt.Sprintf("[ALARM TRIGGERED] %s (%d): %s", alarm.name, id, alarm.msg)
 				bot.rpc.BotSay(text)
-				if alarm.callback != nil && !bot.amIsMuted {
+				bot.amMu.Lock()
+				muted := bot.amIsMuted
+				bot.amMu.Unlock()
+
+				if alarm.callback != nil && !muted {
 					go alarm.callback()
 				}
 			}
@@ -213,6 +221,8 @@ func (bot *RustPlusBot) StartContext(parent context.Context) error {
 		return err
 	}
 
+	bot.startTeamChat(ctx)
+
 	if bot.bm != nil {
 		notify := func(text string) {
 			_ = bot.rpc.BotSay(text)
@@ -224,6 +234,16 @@ func (bot *RustPlusBot) StartContext(parent context.Context) error {
 	if bot.mediaHook != nil {
 		if err := bot.mediaHook.Start(); err != nil {
 			log.Println("mediahook:", err)
+		}
+	}
+
+	if bot.cfg != nil && bot.cfg.data.Death != nil && bot.cfg.data.Death.Enabled {
+		every := bot.cfg.data.Death.Interval
+		if every <= 0 {
+			every = 15
+		}
+		if err := bot.StartDeathWatch(time.Duration(every) * time.Second); err != nil {
+			log.Println("death-watch:", err)
 		}
 	}
 
@@ -242,6 +262,7 @@ func (bot *RustPlusBot) StartContext(parent context.Context) error {
 		}
 
 		cancel()
+		bot.StopDeathWatch()
 		bot.rpc.Disconnect()
 	}()
 
@@ -314,6 +335,9 @@ func (bot *RustPlusBot) connectInitial(ctx context.Context, budget time.Duration
 
 // re-init всех девайсов при (ре)подключении
 func (bot *RustPlusBot) reinitDevices() {
+	bot.commandMu.Lock()
+	defer bot.commandMu.Unlock()
+
 	// антидребезг: если OnConnected прилетело несколько раз подряд — коллапсируем в 1 вызов
 	bot.reinitMu.Lock()
 	if time.Since(bot.lastReinit) < 2*time.Second {

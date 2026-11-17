@@ -2,6 +2,7 @@ package rpclient
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -119,13 +120,42 @@ func (rp *RustPlus) SendCameraInput(buttons int32, dx, dy float32, cb func(*AppM
 
 func (rp *RustPlus) BotSay(msg string) error {
 	text := "[bot] " + msg
-	err := rp.SendTeamMessage(text, nil)
-	log.Println(text)
+	responses := make(chan *AppResponse, 1)
+	request := &AppRequest{SendTeamMessage: &AppSendMessage{Message: proto.String(text)}}
+	err := rp.SendRequest(request, func(message *AppMessage) bool {
+		responses <- message.GetResponse()
+		return true
+	})
 	if err != nil {
-		log.Println(err)
+		rp.setTeamChatError(err)
+		log.Printf("Team chat: message not sent: %v", err)
+		return err
 	}
 
-	return err
+	// Never wait on the socket reader: alarm callbacks can send messages too.
+	go func() {
+		defer rp.removeCallback(request.GetSeq())
+		timer := time.NewTimer(8 * time.Second)
+		defer timer.Stop()
+		var deliveryError error
+		select {
+		case response := <-responses:
+			if response == nil {
+				deliveryError = fmt.Errorf("empty response")
+			} else if response.Error != nil {
+				deliveryError = fmt.Errorf("%s", response.Error.GetError())
+			}
+		case <-timer.C:
+			deliveryError = fmt.Errorf("server did not confirm delivery within 8 seconds")
+		}
+		rp.setTeamChatError(deliveryError)
+		if deliveryError != nil {
+			log.Printf("Team chat: delivery not confirmed: %v; text=%q", deliveryError, text)
+			return
+		}
+		log.Println(text)
+	}()
+	return nil
 }
 
 // ========================= удобный враппер Camera =========================
