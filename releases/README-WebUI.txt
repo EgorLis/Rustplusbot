@@ -1,4 +1,4 @@
-RustPlusBot - test Web UI (1.2.0-webui.1) - Windows x64
+RustPlusBot - test Web UI (1.2.0-webui.2) - Windows x64
 
 1. Extract the archive into a new folder.
 2. Double-click Start-WebUI.cmd.

@@ -145,7 +145,7 @@
         stroke: '#11181a',
         'stroke-width': fontSize * .22,
         'stroke-linejoin': 'round'
-      }, shortTimestamp(death.at)));
+      }, `${death.name || death.player_id || 'Неизвестный игрок'} · ${shortTimestamp(death.at)}`));
       group.append(shape('title',{},`${death.name} · ${gridReference(death,geometry) || 'за пределами сетки'} · ${new Date(death.at).toLocaleString('ru-RU')} · ${death.estimated ? 'последняя известная позиция' : 'позиция Rust+ при обнаружении смерти'}`));
       layer.append(group);
     }

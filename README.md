@@ -1,6 +1,6 @@
 > Connection update (2026-11-17): use the authenticated companion socket. See [CONNECTION.md](CONNECTION.md) for the current config and [schema regeneration](internal/proto/README.md). Older IP/port/proxy connection examples below are obsolete.
 
-> Experimental Web UI: see [WEBUI.md](WEBUI.md) for the local control panel, pairing notifications, map and death markers. Download **test Web UI** from [prereleases](https://github.com/EgorLis/Rustplusbot/releases/tag/v1.2.0-webui.1), extract it into a new folder and run `Start-WebUI.cmd`.
+> Experimental Web UI: see [WEBUI.md](WEBUI.md) for the local control panel, pairing notifications, map and death markers. Download **test Web UI** from [prereleases](https://github.com/EgorLis/Rustplusbot/releases/tag/v1.2.0-webui.2), extract it into a new folder and run `Start-WebUI.cmd`.
 
 # Rust Plus Bot
 

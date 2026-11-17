@@ -57,7 +57,7 @@ The first team snapshot establishes a baseline. Later increases of `death_time`,
 
 History is persisted in `conf/webui-map.json` and filtered by Rust+ server UUID and wipe timestamp. It is bounded to 500 entries. The map image is cached in memory and fetched on request.
 
-Death markers display `DD.MM HH:mm` beside the cross and in the history, using the browser's local time zone. Hovering the marker still shows the full date, player name, grid cell and position accuracy.
+Death markers display the player name and `DD.MM HH:mm` beside the cross and in the history, using the browser's local time zone. Hovering the marker still shows the full date, player name, grid cell and position accuracy.
 
 Vending machine tracking is unavailable through the current standard Rust+ API. Facepunch [stopped sending vending machine and event map markers on 6 August 2026](https://rust.facepunch.com/news/power-trip). The schema still contains `GetMapMarkers` and `VendingMachine`, but that does not mean servers publish these markers. Tracking briefly broadcast shops would require a server that explicitly supplies this data, for example through an administrator-installed plugin.
 
